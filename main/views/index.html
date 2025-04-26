@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Solar Analysis Agent</title>
+  <link rel="stylesheet" href="/css/styles.css">
+  <meta name="description" content="Analyze solar panel potential for any property using satellite imagery">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>Solar Analysis Agent</h1>
+      <p>Discover your property's solar potential using satellite imagery and AI</p>
+    </header>
+    
+    <div id="solar-analysis-container">
+      <!-- Content will be dynamically inserted here by the UI component -->
+    </div>
+    
+    <footer>
+      <p>&copy; 2025 Solar Analysis Agent | Powered by DAIN/Butterfly</p>
+      <p>Using Google Maps Platform and Gemini AI</p>
+    </footer>
+  </div>
+  
+  <!-- Application Scripts -->
+  <script src="/js/user_interface.js"></script>
+  <script>
+    // Mock DAIN client for local development
+    class MockDAINClient {
+      constructor(options) {
+        this.options = options;
+        console.log("Initialized mock DAIN client with:", options);
+      }
+
+      async invoke(service, method, params) {
+        console.log(`Mock invoking ${service}.${method} with params:`, params);
+        
+        // Simulate a delay
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Return mock data for solar analysis
+        return {
+          data: {
+            satellite_image_url: "https://maps.googleapis.com/maps/api/staticmap?center=37.7749,-122.4194&zoom=20&size=600x600&maptype=satellite",
+            recommendations: {
+              systemSize: 5.5,
+              annualProduction: 8200,
+              installationCost: 15500,
+              roi: 14,
+              panelMaterial: "Monocrystalline",
+              orientation: "South",
+              tiltAngle: 30,
+              panelCount: 16,
+              specialConsiderations: "Consider seasonal adjustments and possible tree trimming to maximize solar exposure."
+            },
+            report: {
+              environmentalImpact: {
+                co2Offset: 5740
+              }
+            }
+          }
+        };
+      }
+    }
+    
+    // Initialize the mock DAIN client
+    const dainClient = new MockDAINClient({
+      serviceId: 'solar-analysis-agent',
+      apiKey: 'YOUR_DAIN_API_KEY'
+    });
+    
+    // Initialize the UI
+    document.addEventListener('DOMContentLoaded', () => {
+      const ui = new SolarAnalysisUI(dainClient);
+      ui.init();
+    });
+  </script>
+</body>
+</html>
+
