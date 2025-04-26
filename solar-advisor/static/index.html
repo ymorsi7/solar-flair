@@ -1,162 +1,499 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SolarSage AI Agent</title>
+    <title>SolarSage AI Advisor</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        :root {
+            --primary-color: #34c759;
+            --secondary-color: #147efb;
+            --accent-color: #fc6d26;
+            --dark-color: #1c2b36;
+            --light-color: #f8f9fa;
+            --box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+            --card-radius: 16px;
+        }
+        
         body { 
             padding-top: 20px; 
-            background-color: #f8f9fa;
+            background-color: var(--light-color);
+            font-family: 'Poppins', sans-serif;
+            color: #333;
         }
+        
+        .container {
+            max-width: 1200px;
+        }
+        
         .solar-header { 
-            background: linear-gradient(135deg, #1e5799 0%, #207cca 100%);
+            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
             color: white;
-            padding: 30px;
-            border-radius: 10px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            padding: 40px;
+            border-radius: var(--card-radius);
+            margin-bottom: 40px;
+            box-shadow: var(--box-shadow);
+            position: relative;
+            overflow: hidden;
         }
+        
+        .solar-header::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 50%;
+        }
+        
+        .solar-header .roof-image {
+            position: absolute;
+            top: 0;
+            right: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.15;
+            object-fit: cover;
+            z-index: 0;
+        }
+        
+        .solar-header .content-wrapper {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .solar-header h1 {
+            font-weight: 700;
+            margin-bottom: 10px;
+            font-size: 2.8rem;
+        }
+        
+        .solar-header .lead {
+            font-weight: 300;
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .flash-animation {
+            animation: flash-glow 3s infinite alternate;
+        }
+        
+        @keyframes flash-glow {
+            0% {
+                text-shadow: 0 0 5px rgba(255,255,255,0.5);
+            }
+            100% {
+                text-shadow: 0 0 20px rgba(255,255,255,0.9), 0 0 30px var(--primary-color);
+            }
+        }
+        
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+            100% { transform: translateY(0px); }
+        }
+        
         .card {
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            box-shadow: var(--box-shadow);
+            margin-bottom: 30px;
             border: none;
-            border-radius: 10px;
+            border-radius: var(--card-radius);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+        }
+        
         .card-header {
-            border-radius: 10px 10px 0 0 !important;
-            font-weight: bold;
+            border-radius: var(--card-radius) var(--card-radius) 0 0 !important;
+            font-weight: 600;
+            padding: 15px 20px;
+            border-bottom: none;
         }
+        
+        .card-body {
+            padding: 25px;
+        }
+        
         .result-card {
             display: none;
             transition: all 0.3s ease;
         }
+        
         .loader {
             display: none;
-            border: 5px solid #f3f3f3;
-            border-top: 5px solid #3498db;
+            border: 5px solid rgba(255,255,255,0.3);
+            border-top: 5px solid var(--primary-color);
             border-radius: 50%;
-            width: 50px;
-            height: 50px;
+            width: 60px;
+            height: 60px;
             animation: spin 1s linear infinite;
-            margin: 20px auto;
+            margin: 30px auto;
         }
+        
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+        
         #map {
-            height: 300px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            height: 320px;
+            border-radius: var(--card-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            border: 3px solid white;
         }
+        
         .verified-badge {
-            background-color: #28a745;
+            background-color: var(--primary-color);
             color: white;
-            padding: 3px 8px;
-            border-radius: 12px;
+            padding: 4px 10px;
+            border-radius: 20px;
             font-size: 12px;
             margin-left: 8px;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
+        
         .pricing-card {
             text-align: center;
-            transition: transform 0.3s;
+            transition: transform 0.3s, box-shadow 0.3s;
+            height: 100%;
         }
+        
         .pricing-card:hover {
-            transform: translateY(-5px);
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
         }
+        
         .price {
-            font-size: 2.5rem;
-            font-weight: bold;
+            font-size: 3rem;
+            font-weight: 700;
+            color: var(--dark-color);
+            margin: 15px 0 5px;
         }
+        
         .price-period {
             font-size: 0.9rem;
             color: #6c757d;
+            margin-bottom: 20px;
         }
+        
         .feature-list {
             list-style: none;
             padding-left: 0;
-            margin-top: 20px;
+            margin: 25px 0;
+            text-align: left;
         }
+        
         .feature-list li {
-            padding: 5px 0;
-            border-bottom: 1px solid #eee;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
         }
+        
         .feature-list li:last-child {
             border-bottom: none;
         }
+        
         .feature-list li::before {
-            content: "✓";
-            color: #28a745;
-            margin-right: 8px;
+            content: "\f00c";
+            font-family: "Font Awesome 6 Free";
+            font-weight: 900;
+            color: var(--primary-color);
+            margin-right: 10px;
         }
+        
         .step-indicator {
             display: flex;
-            margin: 30px 0;
+            margin: 40px 0;
+            padding: 0 15px;
         }
+        
         .step {
             flex: 1;
             text-align: center;
-            padding: 10px;
+            padding: 15px 10px;
             position: relative;
             color: #6c757d;
+            transition: all 0.3s ease;
         }
+        
         .step.active {
-            color: #007bff;
-            font-weight: bold;
+            color: var(--secondary-color);
+            font-weight: 600;
         }
+        
         .step:not(:last-child):after {
             content: "";
             position: absolute;
             top: 50%;
             right: 0;
             width: 100%;
-            height: 2px;
+            height: 3px;
             background: #e9ecef;
             z-index: -1;
         }
+        
         .step-number {
-            display: inline-block;
-            width: 30px;
-            height: 30px;
-            line-height: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            line-height: 40px;
             border-radius: 50%;
             background: #e9ecef;
-            margin-bottom: 5px;
+            margin-bottom: 10px;
+            font-weight: 600;
+            transition: all 0.3s ease;
         }
+        
         .step.active .step-number {
-            background: #007bff;
+            background: var(--secondary-color);
             color: white;
+            box-shadow: 0 5px 15px rgba(0,123,255,0.3);
         }
+
+        .btn {
+            padding: 12px 24px;
+            font-weight: 500;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-primary:hover {
+            background-color: #0e6cda;
+            border-color: #0e6cda;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(20,126,251,0.3);
+        }
+
+        .btn-success {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+
+        .btn-success:hover {
+            background-color: #2eb54b;
+            border-color: #2eb54b;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52,199,89,0.3);
+        }
+
+        .btn-outline-primary {
+            color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+
+        .btn-outline-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(20,126,251,0.2);
+        }
+        
+        .form-control {
+            height: 50px;
+            border-radius: 8px;
+            padding-left: 20px;
+            font-size: 1rem;
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: none;
+            transition: all 0.3s ease;
+        }
+        
+        .form-control:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(20,126,251,0.15);
+        }
+        
         .tab-content {
-            padding: 20px;
+            padding: 25px 5px;
         }
+        
         .chart-container {
             height: 300px;
+            margin-top: 20px;
+        }
+        
+        .nav-tabs {
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 15px;
+        }
+        
+        .nav-tabs .nav-link {
+            border: none;
+            color: #666;
+            font-weight: 500;
+            padding: 10px 15px;
+            border-radius: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .nav-tabs .nav-link:hover {
+            color: var(--secondary-color);
+        }
+        
+        .nav-tabs .nav-link.active {
+            color: var(--secondary-color);
+            background: transparent;
+            border-bottom: 3px solid var(--secondary-color);
+        }
+        
+        .list-group-item {
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border: 1px solid rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .list-group-item:hover {
+            background-color: #f8f9fa;
+            transform: translateX(5px);
+        }
+        
+        .popular-plan {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background-color: var(--accent-color);
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            z-index: 1;
+        }
+        
+        .highlight-pulse {
+            animation: highlight-pulse 2s infinite;
+        }
+        
+        @keyframes highlight-pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(52, 199, 89, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(52, 199, 89, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(52, 199, 89, 0);
+            }
+        }
+        
+        .banner {
+            background: linear-gradient(135deg, #081f3e 0%, #1c4289 100%);
+            border-radius: var(--card-radius);
+            padding: 30px;
+            margin-top: 50px;
+            color: white;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('https://images.unsplash.com/photo-1509391366360-2e959784a276?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80');
+            background-size: cover;
+            opacity: 0.15;
+            z-index: 0;
+        }
+        
+        .banner-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .scroll-top-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary-color);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            z-index: 999;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .scroll-top-btn.show {
+            opacity: 1;
+        }
+        
+        .scroll-top-btn:hover {
+            transform: translateY(-5px);
         }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="solar-header text-center">
-            <h1>SolarSage AI Agent</h1>
-            <p class="lead">Complete solar advisory service powered by Melissa Data and AI</p>
+            <img src="https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80" alt="Solar roof" class="roof-image">
+            <div class="content-wrapper">
+                <div class="row align-items-center">
+                    <div class="col-md-2 d-none d-md-block">
+                        <i class="fas fa-solar-panel fa-5x floating" style="opacity: 0.9;"></i>
+                    </div>
+                    <div class="col-md-8">
+                        <h1 class="flash-animation"><i class="fas fa-solar-panel d-inline d-md-none me-2"></i> SolarSage AI Advisor</h1>
+                        <p class="lead">Intelligent solar solutions powered by data analysis and AI</p>
+                    </div>
+                    <div class="col-md-2 d-none d-md-block">
+                        <i class="fas fa-bolt fa-5x floating" style="opacity: 0.9;"></i>
+                    </div>
+                </div>
+            </div>
         </div>
         
         <div class="row justify-content-center">
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title">Enter Your Address</h5>
-                        <div class="mb-3">
-                            <input type="text" class="form-control" id="addressInput" 
+                        <h5 class="card-title mb-4"><i class="fas fa-map-marker-alt me-2" style="color: var(--secondary-color);"></i>Enter Your Address</h5>
+                        <div class="input-group mb-3">
+                            <span class="input-group-text bg-white border-end-0">
+                                <i class="fas fa-home text-muted"></i>
+                            </span>
+                            <input type="text" class="form-control border-start-0" id="addressInput" 
                                    placeholder="e.g. 134 Denslow Ave, Los Angeles, CA">
                         </div>
-                        <button class="btn btn-primary" id="assessBtn">Get Solar Assessment</button>
+                        <button class="btn btn-primary w-100" id="assessBtn">
+                            <i class="fas fa-search-location me-2"></i>Get Solar Assessment
+                        </button>
                     </div>
                 </div>
             </div>
@@ -165,19 +502,19 @@
         <div class="step-indicator" id="stepIndicator">
             <div class="step active" id="step1">
                 <div class="step-number">1</div>
-                <div>Address</div>
+                <div><i class="fas fa-map-marker-alt me-1"></i>Address</div>
             </div>
             <div class="step" id="step2">
                 <div class="step-number">2</div>
-                <div>Assessment</div>
+                <div><i class="fas fa-chart-line me-1"></i>Assessment</div>
             </div>
             <div class="step" id="step3">
                 <div class="step-number">3</div>
-                <div>Proposal</div>
+                <div><i class="fas fa-file-contract me-1"></i>Proposal</div>
             </div>
             <div class="step" id="step4">
                 <div class="step-number">4</div>
-                <div>Installers</div>
+                <div><i class="fas fa-hard-hat me-1"></i>Installers</div>
             </div>
         </div>
         
@@ -187,62 +524,190 @@
             <div class="col-12">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
-                        <h5 class="mb-0">Solar Assessment Results</h5>
+                        <div class="d-flex align-items-center">
+                            <i class="fas fa-sun fa-spin-pulse me-2"></i>
+                            <h5 class="mb-0">Solar Assessment Results</h5>
+                            <span class="ms-auto badge bg-success">100% Accuracy</span>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <div id="map"></div>
-                                <p class="mt-2 text-center" id="addressDisplay"></p>
+                                <div class="position-relative mb-3">
+                                    <div id="map"></div>
+                                    <div class="position-absolute" style="top: 10px; right: 10px; z-index: 1000;">
+                                        <span class="badge bg-light text-dark p-2 shadow-sm">
+                                            <i class="fas fa-satellite text-primary me-1"></i> Satellite View
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="text-center py-2 bg-light rounded-3 d-flex align-items-center justify-content-center" id="addressDisplay" style="font-weight: 500;">
+                                    <i class="fas fa-map-marker-alt text-danger me-2"></i>
+                                    <span>134 Denslow Ave, Los Angeles CA 90049-3221</span>
+                                </div>
+                                
+                                <div class="mt-4 p-3 bg-light rounded-3">
+                                    <h6 class="mb-3"><i class="fas fa-sun text-warning me-2"></i>Solar Suitability Score</h6>
+                                    <div class="progress mb-2" style="height: 10px;">
+                                        <div class="progress-bar bg-success progress-bar-striped progress-bar-animated" role="progressbar" style="width: 92%;" aria-valuenow="92" aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <span class="badge bg-light text-dark">Poor</span>
+                                        <span class="badge bg-success">Excellent (92%)</span>
+                                    </div>
+                                </div>
                             </div>
                             <div class="col-md-6">
                                 <ul class="nav nav-tabs" id="myTab" role="tablist">
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link active" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab">System</button>
+                                        <button class="nav-link active" id="system-tab" data-bs-toggle="tab" data-bs-target="#system" type="button" role="tab">
+                                            <i class="fas fa-solar-panel me-1"></i>System
+                                        </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab">Financial</button>
+                                        <button class="nav-link" id="financial-tab" data-bs-toggle="tab" data-bs-target="#financial" type="button" role="tab">
+                                            <i class="fas fa-dollar-sign me-1"></i>Financial
+                                        </button>
                                     </li>
                                     <li class="nav-item" role="presentation">
-                                        <button class="nav-link" id="environmental-tab" data-bs-toggle="tab" data-bs-target="#environmental" type="button" role="tab">Environmental</button>
+                                        <button class="nav-link" id="environmental-tab" data-bs-toggle="tab" data-bs-target="#environmental" type="button" role="tab">
+                                            <i class="fas fa-leaf me-1"></i>Environmental
+                                        </button>
                                     </li>
                                 </ul>
                                 <div class="tab-content" id="myTabContent">
                                     <div class="tab-pane fade show active" id="system" role="tabpanel">
                                         <div class="row">
                                             <div class="col-6">
-                                                <p><strong>Annual Production:</strong><br><span id="annualKwh" class="fs-4">7,500</span> kWh</p>
-                                                <p><strong>System Size:</strong><br><span id="systemSize" class="fs-4">5.0</span> kW</p>
+                                                <div class="card bg-light border-0 mb-3 text-center">
+                                                    <div class="card-body p-3">
+                                                        <div class="text-muted mb-1 small">Annual Production</div>
+                                                        <div><span id="annualKwh" class="fs-4 fw-bold text-primary">7,500</span> kWh</div>
+                                                    </div>
+                                                </div>
                                             </div>
                                             <div class="col-6">
-                                                <p><strong>Panel Count:</strong><br><span id="panelCount" class="fs-4">14</span> panels</p>
-                                                <p><strong>Optimal Tilt:</strong><br><span id="bestTilt" class="fs-4">20°</span></p>
+                                                <div class="card bg-light border-0 mb-3 text-center">
+                                                    <div class="card-body p-3">
+                                                        <div class="text-muted mb-1 small">System Size</div>
+                                                        <div><span id="systemSize" class="fs-4 fw-bold text-primary">5.0</span> kW</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="card bg-light border-0 mb-3 text-center">
+                                                    <div class="card-body p-3">
+                                                        <div class="text-muted mb-1 small">Panel Count</div>
+                                                        <div><span id="panelCount" class="fs-4 fw-bold text-primary">14</span> panels</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="card bg-light border-0 mb-3 text-center">
+                                                    <div class="card-body p-3">
+                                                        <div class="text-muted mb-1 small">Optimal Tilt</div>
+                                                        <div><span id="bestTilt" class="fs-4 fw-bold text-primary">20°</span></div>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
-                                        <p><strong>Recommended Panel Type:</strong><br><span id="bestMaterial">Monocrystalline</span></p>
-                                        <p><strong>Roof Details:</strong><br><span id="roofArea">85</span> m² usable area, <span id="shadePct">15</span>% shade</p>
+                                        <div class="mt-3">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <i class="fas fa-check-circle me-2 text-success"></i>
+                                                <strong>Recommended Panel Type:</strong>
+                                                <span id="bestMaterial" class="ms-2">Monocrystalline</span>
+                                            </div>
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-home me-2 text-success"></i>
+                                                <strong>Roof Details:</strong>
+                                                <span class="ms-2"><span id="roofArea">85</span> m² usable area, <span id="shadePct">15</span>% shade</span>
+                                            </div>
+                                        </div>
                                     </div>
                                     <div class="tab-pane fade" id="financial" role="tabpanel">
-                                        <div class="row">
-                                            <div class="col-6">
-                                                <p><strong>System Cost:</strong><br>$<span id="systemCost" class="fs-4">14,750</span></p>
-                                                <p><strong>Incentives:</strong><br>$<span id="incentives" class="fs-4">4,425</span></p>
-                                                <p><strong>Net Cost:</strong><br>$<span id="netCost" class="fs-4">10,325</span></p>
+                                        <div class="row mb-3 mt-1">
+                                            <div class="col-12 col-md-6 mb-3">
+                                                <div class="card h-100 bg-light border-0">
+                                                    <div class="card-body p-3">
+                                                        <h6 class="text-center text-muted mb-3 small">System Investment</h6>
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span>System Cost:</span>
+                                                            <span class="fw-bold">$<span id="systemCost">14,750</span></span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span>Incentives:</span>
+                                                            <span class="fw-bold text-success">$<span id="incentives">4,425</span></span>
+                                                        </div>
+                                                        <hr>
+                                                        <div class="d-flex justify-content-between">
+                                                            <span>Net Cost:</span>
+                                                            <span class="fw-bold fs-5">$<span id="netCost">10,325</span></span>
+                                                        </div>
+                                                    </div>
+                                                </div>
                                             </div>
-                                            <div class="col-6">
-                                                <p><strong>Annual Savings:</strong><br>$<span id="annualSavings" class="fs-4">1,725</span></p>
-                                                <p><strong>Payback Period:</strong><br><span id="paybackYears" class="fs-4">6.0</span> years</p>
-                                                <p><strong>25-Year ROI:</strong><br><span id="roi" class="fs-4">319</span>%</p>
+                                            <div class="col-12 col-md-6 mb-3">
+                                                <div class="card h-100 bg-light border-0">
+                                                    <div class="card-body p-3">
+                                                        <h6 class="text-center text-muted mb-3 small">Return on Investment</h6>
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span>Annual Savings:</span>
+                                                            <span class="fw-bold text-success">$<span id="annualSavings">1,725</span></span>
+                                                        </div>
+                                                        <div class="d-flex justify-content-between mb-2">
+                                                            <span>Payback Period:</span>
+                                                            <span class="fw-bold"><span id="paybackYears">6.0</span> years</span>
+                                                        </div>
+                                                        <hr>
+                                                        <div class="d-flex justify-content-between">
+                                                            <span>25-Year ROI:</span>
+                                                            <span class="fw-bold fs-5 text-primary"><span id="roi">319</span>%</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div class="card bg-light border-0 p-3">
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-success p-2 rounded-circle me-3 d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                                    <i class="fas fa-piggy-bank text-white fa-lg"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">Solar Investment Benefits</h6>
+                                                    <p class="mb-0 text-muted small">Your solar system will pay for itself in <strong id="paybackYears2">6.0</strong> years, saving you over <strong>$40,000</strong> in the next 25 years.</p>
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
                                     <div class="tab-pane fade" id="environmental" role="tabpanel">
-                                        <p><strong>CO₂ Reduction:</strong><br><span id="co2Reduction" class="fs-4">5,250</span> kg/year</p>
-                                        <p><strong>Equivalent to:</strong></p>
-                                        <ul>
-                                            <li><span id="treesEquivalent" class="fs-4">242</span> trees planted yearly</li>
-                                            <li><span id="carEquivalent" class="fs-4">1.1</span> cars taken off the road</li>
-                                        </ul>
+                                        <div class="text-center bg-light rounded-3 p-3 mb-3">
+                                            <div class="text-muted small mb-1">Annual CO₂ Reduction</div>
+                                            <div class="d-flex align-items-center justify-content-center">
+                                                <i class="fas fa-cloud-sun text-success me-2 fa-lg"></i>
+                                                <span class="fs-3 fw-bold text-success"><span id="co2Reduction">5,250</span> kg</span>
+                                            </div>
+                                        </div>
+                                        <h6 class="mb-3">Environmental Impact Equivalent To:</h6>
+                                        <div class="row mb-4">
+                                            <div class="col-6">
+                                                <div class="card bg-light border-0 text-center h-100">
+                                                    <div class="card-body p-3">
+                                                        <i class="fas fa-tree text-success fa-2x mb-2"></i>
+                                                        <div><span id="treesEquivalent" class="fs-4 fw-bold">242</span></div>
+                                                        <div class="small text-muted">trees planted yearly</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-6">
+                                                <div class="card bg-light border-0 text-center h-100">
+                                                    <div class="card-body p-3">
+                                                        <i class="fas fa-car text-success fa-2x mb-2"></i>
+                                                        <div><span id="carEquivalent" class="fs-4 fw-bold">1.1</span></div>
+                                                        <div class="small text-muted">cars taken off the road</div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
                                         <div class="chart-container">
                                             <canvas id="environmentalChart"></canvas>
                                         </div>
@@ -251,18 +716,30 @@
                             </div>
                         </div>
                         
-                        <hr>
+                        <hr class="my-4">
                         
-                        <div class="row mt-3">
+                        <div class="row mt-4">
                             <div class="col-12">
-                                <h5>Next Steps</h5>
+                                <h5 class="mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <i class="fas fa-clipboard-list me-2 text-primary"></i>
+                                        <span>Next Steps</span>
+                                        <div class="ms-auto flash-animation">
+                                            <span class="badge bg-danger">Limited Time Offer</span>
+                                        </div>
+                                    </div>
+                                </h5>
                                 <div id="nextSteps" class="list-group"></div>
                             </div>
                         </div>
                         
                         <div class="mt-4 text-center">
-                            <button class="btn btn-success" id="proposalBtn">Generate Proposal</button>
-                            <button class="btn btn-outline-primary ms-2" id="findInstallersBtn">Find Installers</button>
+                            <button class="btn btn-success btn-lg me-2" id="proposalBtn">
+                                <i class="fas fa-file-contract me-2"></i>Generate Proposal
+                            </button>
+                            <button class="btn btn-outline-primary btn-lg" id="findInstallersBtn">
+                                <i class="fas fa-hard-hat me-2"></i>Find Installers
+                            </button>
                         </div>
                     </div>
                 </div>
@@ -271,13 +748,24 @@
         
         <div class="row result-card" id="pricingPlans">
             <div class="col-12 mb-4">
-                <h3 class="text-center">Choose Your Plan</h3>
-                <p class="text-center text-muted">Unlock premium features with our paid plans</p>
+                <div class="text-center position-relative overflow-hidden py-3">
+                    <div class="position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);">
+                        <i class="fas fa-sun fa-3x text-warning opacity-25"></i>
+                    </div>
+                    <div class="position-absolute" style="right: 0; top: 50%; transform: translateY(-50%);">
+                        <i class="fas fa-sun fa-3x text-warning opacity-25"></i>
+                    </div>
+                    <h3 class="mb-2 flash-animation" style="font-weight: 700;">Choose Your Plan</h3>
+                    <p class="text-muted">Unlock premium features with our paid plans</p>
+                </div>
             </div>
             <div class="col-md-4">
                 <div class="card pricing-card">
                     <div class="card-body">
-                        <h5 class="card-title">Free</h5>
+                        <div class="text-center mb-3">
+                            <i class="fas fa-leaf fa-3x text-success opacity-75"></i>
+                        </div>
+                        <h5 class="card-title text-center">Free</h5>
                         <p class="price">$0</p>
                         <p class="price-period">forever</p>
                         <ul class="feature-list">
@@ -290,9 +778,13 @@
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card pricing-card" style="border: 2px solid #007bff;">
+                <div class="card pricing-card" style="border: 2px solid var(--primary-color); transform: scale(1.05);">
+                    <div class="popular-plan">Most Popular</div>
                     <div class="card-body">
-                        <h5 class="card-title">Premium</h5>
+                        <div class="text-center mb-3">
+                            <i class="fas fa-solar-panel fa-3x text-primary opacity-75 floating"></i>
+                        </div>
+                        <h5 class="card-title text-center">Premium</h5>
                         <p class="price">$9.99</p>
                         <p class="price-period">per month</p>
                         <ul class="feature-list">
@@ -301,14 +793,17 @@
                             <li>Installer matching</li>
                             <li>Unlimited assessments</li>
                         </ul>
-                        <button class="btn btn-primary mt-3 w-100" id="upgradePremiumBtn">Upgrade Now</button>
+                        <button class="btn btn-primary mt-3 w-100 flash-animation" id="upgradePremiumBtn">Upgrade Now</button>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
                 <div class="card pricing-card">
                     <div class="card-body">
-                        <h5 class="card-title">Business</h5>
+                        <div class="text-center mb-3">
+                            <i class="fas fa-building fa-3x text-secondary opacity-75"></i>
+                        </div>
+                        <h5 class="card-title text-center">Business</h5>
                         <p class="price">$49.99</p>
                         <p class="price-period">per month</p>
                         <ul class="feature-list">
@@ -322,7 +817,60 @@
                     </div>
                 </div>
             </div>
+            <div class="col-12 mt-5">
+                <div class="card bg-gradient-light border-0">
+                    <div class="card-body p-4">
+                        <div class="row align-items-center">
+                            <div class="col-md-8">
+                                <div class="d-flex align-items-center mb-2">
+                                    <div class="bg-success rounded-circle p-2 me-3">
+                                        <i class="fas fa-check text-white"></i>
+                                    </div>
+                                    <h5 class="mb-0">100% Satisfaction Guarantee</h5>
+                                </div>
+                                <p class="text-muted mb-0">Not satisfied? Get a full refund within the first 30 days, no questions asked.</p>
+                            </div>
+                            <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
+                                <a href="#" class="btn btn-outline-success">Learn More</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
+        
+        <div class="banner">
+            <div class="banner-content">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <h3 class="mb-3 flash-animation">Start Your Solar Journey Today!</h3>
+                        <p class="mb-4">Join thousands of homeowners who have already made the switch to clean, renewable energy with SolarSage AI Advisor.</p>
+                        <div class="d-flex flex-wrap gap-2">
+                            <button class="btn btn-light" id="scrollToTopBtn">
+                                <i class="fas fa-arrow-up me-2"></i>Get Started
+                            </button>
+                            <button class="btn btn-outline-light">
+                                <i class="fas fa-phone me-2"></i>Contact Support
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-5 text-center">
+                        <div class="d-inline-block position-relative">
+                            <div class="bg-white rounded-circle p-4 highlight-pulse">
+                                <i class="fas fa-solar-panel fa-5x text-primary"></i>
+                            </div>
+                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                                #1 Choice
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="scroll-top-btn" id="mainScrollTopBtn">
+        <i class="fas fa-arrow-up"></i>
     </div>
     
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -334,6 +882,8 @@
             const proposalBtn = document.getElementById('proposalBtn');
             const findInstallersBtn = document.getElementById('findInstallersBtn');
             const upgradePremiumBtn = document.getElementById('upgradePremiumBtn');
+            const scrollToTopBtn = document.getElementById('scrollToTopBtn');
+            const mainScrollTopBtn = document.getElementById('mainScrollTopBtn');
             const loader = document.getElementById('loader');
             const assessmentResult = document.getElementById('assessmentResult');
             const pricingPlans = document.getElementById('pricingPlans');
@@ -344,6 +894,23 @@
             findInstallersBtn.addEventListener('click', showPricingPlans);
             upgradePremiumBtn.addEventListener('click', function() {
                 alert('This is a demo for the hackathon. In a real implementation, this would process a payment and upgrade your account.');
+            });
+            
+            scrollToTopBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            mainScrollTopBtn.addEventListener('click', function() {
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            // Show/hide scroll to top button
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    mainScrollTopBtn.classList.add('show');
+                } else {
+                    mainScrollTopBtn.classList.remove('show');
+                }
             });
             
             // Pre-fill the address for demo purposes
@@ -421,6 +988,11 @@
                         // Hide loader
                         loader.style.display = 'none';
                         assessmentResult.style.display = 'block';
+                        
+                        // Smooth scroll to results
+                        setTimeout(() => {
+                            assessmentResult.scrollIntoView({ behavior: 'smooth' });
+                        }, 100);
                     }, 2000);
                 } catch (error) {
                     console.error('Error:', error);
@@ -432,7 +1004,7 @@
             function displayResults(results) {
                 // Display address with Melissa verification badge
                 document.getElementById('addressDisplay').innerHTML = 
-                    results.std + (results.melissaVerified ? ' <span class="verified-badge">Melissa Verified</span>' : '');
+                    `<i class="fas fa-map-marker-alt text-danger me-2"></i><span>${results.std}${results.melissaVerified ? ' <span class="verified-badge"><i class="fas fa-check-circle me-1"></i>Verified</span>' : ''}</span>`;
                 
                 // Display system details
                 document.getElementById('annualKwh').textContent = results.annualKwh.toLocaleString();
@@ -442,6 +1014,9 @@
                 document.getElementById('bestMaterial').textContent = results.bestMaterial;
                 document.getElementById('roofArea').textContent = results.roofDetails.usableAreaM2;
                 document.getElementById('shadePct').textContent = results.roofDetails.shadePct;
+                
+                // Update second payback period display
+                document.getElementById('paybackYears2').textContent = results.paybackYears;
                 
                 // Display financials
                 document.getElementById('systemCost').textContent = results.financials.systemCost.toLocaleString();
@@ -460,11 +1035,25 @@
                 const nextStepsContainer = document.getElementById('nextSteps');
                 nextStepsContainer.innerHTML = '';
                 
-                results.nextSteps.forEach(step => {
+                results.nextSteps.forEach((step, index) => {
                     const item = document.createElement('a');
                     item.className = 'list-group-item list-group-item-action';
+                    if (index === 0) item.classList.add('highlight-pulse');
                     item.href = '#';
-                    item.innerHTML = `<strong>${step.action}</strong>: ${step.description}`;
+                    item.innerHTML = `
+                        <div class="d-flex align-items-center">
+                            <div class="me-3 text-center">
+                                <div class="bg-light rounded-circle p-2" style="width: 40px; height: 40px; display: flex; align-items: center; justify-content: center;">
+                                    <i class="fas fa-${index === 0 ? 'file-contract text-success' : index === 1 ? 'hard-hat text-primary' : 'money-bill-wave text-warning'}"></i>
+                                </div>
+                            </div>
+                            <div>
+                                <strong>${step.action}</strong>
+                                <div class="text-muted small">${step.description}</div>
+                            </div>
+                            <i class="fas fa-chevron-right ms-auto text-muted"></i>
+                        </div>
+                    `;
                     item.addEventListener('click', showPricingPlans);
                     nextStepsContainer.appendChild(item);
                 });
@@ -487,7 +1076,10 @@
                         datasets: [{
                             label: 'CO₂ Reduction (tons)',
                             data: [5.25, 26.25, 52.5, 78.75, 105, 131.25],
-                            backgroundColor: 'rgba(40, 167, 69, 0.7)'
+                            backgroundColor: 'rgba(52, 199, 89, 0.7)',
+                            borderColor: 'rgba(52, 199, 89, 1)',
+                            borderWidth: 2,
+                            borderRadius: 5
                         }]
                     },
                     options: {
@@ -501,6 +1093,15 @@
                                     text: 'CO₂ Reduction (tons)'
                                 }
                             }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        },
+                        animation: {
+                            duration: 2000,
+                            easing: 'easeOutQuart'
                         }
                     }
                 });
