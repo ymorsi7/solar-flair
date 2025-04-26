@@ -155,6 +155,8 @@
             border-radius: var(--card-radius);
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
             border: 3px solid white;
+            width: 100%;
+            z-index: 1;
         }
         
         .verified-badge {
@@ -456,6 +458,27 @@
         
         .scroll-top-btn:hover {
             transform: translateY(-5px);
+        }
+        
+        .map-custom-icon {
+            background: none !important;
+            border: none !important;
+            box-shadow: none !important;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .map-custom-icon i {
+            filter: drop-shadow(0px 2px 3px rgba(0,0,0,0.3));
+        }
+        
+        .leaflet-popup-content {
+            margin: 5px !important;
+        }
+        
+        .leaflet-container {
+            font-family: 'Poppins', sans-serif !important;
         }
     </style>
 </head>
@@ -1058,14 +1081,59 @@
                     nextStepsContainer.appendChild(item);
                 });
                 
-                // Initialize map
-                const map = L.map('map').setView([results.lat, results.lng], 15);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-                L.marker([results.lat, results.lng]).addTo(map)
-                    .bindPopup(results.std)
-                    .openPopup();
+                // Initialize map with a slight delay to ensure container is rendered
+                setTimeout(() => {
+                    // Clear any existing map instance
+                    const mapContainer = document.getElementById('map');
+                    mapContainer.innerHTML = '';
+                    
+                    const map = L.map('map', {
+                        attributionControl: true,
+                        zoomControl: true
+                    }).setView([results.lat, results.lng], 18);  // Increased zoom level
+                    
+                    // Use a different tile provider for better loading
+                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        maxZoom: 19,
+                        crossOrigin: true
+                    }).addTo(map);
+                    
+                    // Add a fallback tile layer in case the primary one fails
+                    const fallbackTileLayer = L.tileLayer('https://tile.thunderforest.com/neighbourhood/{z}/{x}/{y}.png?apikey=6170aad10dfd42a38d4d8c709a536f38', {
+                        attribution: '&copy; <a href="https://www.thunderforest.com/">Thunderforest</a>, &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                        maxZoom: 19,
+                        opacity: 0,
+                        crossOrigin: true
+                    }).addTo(map);
+                    
+                    // If primary tiles fail to load, show fallback tiles
+                    setTimeout(() => {
+                        const mapTiles = document.querySelectorAll('.leaflet-tile');
+                        if (mapTiles.length < 4) {  // Not enough tiles loaded
+                            fallbackTileLayer.setOpacity(1);
+                        }
+                    }, 2000);
+                    
+                    // Add a more visible marker
+                    const marker = L.marker([results.lat, results.lng], {
+                        icon: L.divIcon({
+                            html: '<i class="fas fa-home fa-2x text-danger"></i>',
+                            iconSize: [20, 20],
+                            className: 'map-custom-icon'
+                        })
+                    }).addTo(map);
+                    
+                    marker.bindPopup(`
+                        <div class="p-2">
+                            <strong>${results.std}</strong><br>
+                            <span class="small text-muted">Perfect for solar!</span>
+                        </div>
+                    `).openPopup();
+                    
+                    // Force map to update its container size
+                    map.invalidateSize();
+                }, 300);
                 
                 // Create environmental impact chart
                 const ctx = document.getElementById('environmentalChart').getContext('2d');
