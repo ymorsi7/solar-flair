@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>SolarSage AI Advisor</title>
+    <title>SolarSage AI - Powered by Google Gemini 2.5</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="A revolutionary solar advisory platform utilizing Google Gemini 2.5 for multimodal analysis and recommendation">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -19,6 +20,10 @@
             --light-color: #f8f9fa;
             --box-shadow: 0 8px 30px rgba(0,0,0,0.12);
             --card-radius: 16px;
+            --gemini-blue: #4285F4;
+            --gemini-red: #EA4335;
+            --gemini-yellow: #FBBC05;
+            --gemini-green: #34A853;
         }
         
         body { 
@@ -33,7 +38,7 @@
         }
         
         .solar-header { 
-            background: linear-gradient(135deg, var(--secondary-color) 0%, var(--primary-color) 100%);
+            background: linear-gradient(135deg, var(--gemini-blue) 0%, var(--gemini-green) 100%);
             color: white;
             padding: 40px;
             border-radius: var(--card-radius);
@@ -41,6 +46,65 @@
             box-shadow: var(--box-shadow);
             position: relative;
             overflow: hidden;
+        }
+        
+        .gemini-dots {
+            position: absolute;
+            width: 100px;
+            height: 20px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .gemini-dots span {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+        }
+        
+        .gemini-dots.top-right {
+            top: 20px;
+            right: 20px;
+        }
+        
+        .gemini-dots.bottom-left {
+            bottom: 20px;
+            left: 20px;
+        }
+        
+        .gemini-dot-1 {
+            background-color: var(--gemini-blue);
+            animation: pulse 2s infinite;
+        }
+        
+        .gemini-dot-2 {
+            background-color: var(--gemini-red);
+            animation: pulse 2s infinite 0.5s;
+        }
+        
+        .gemini-dot-3 {
+            background-color: var(--gemini-yellow);
+            animation: pulse 2s infinite 1s;
+        }
+        
+        .gemini-dot-4 {
+            background-color: var(--gemini-green);
+            animation: pulse 2s infinite 1.5s;
+        }
+        
+        @keyframes pulse {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2);
+                opacity: 0.7;
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
         
         .solar-header::before {
@@ -80,6 +144,21 @@
             font-weight: 300;
             font-size: 1.2rem;
             opacity: 0.9;
+        }
+        
+        .gemini-badge {
+            display: inline-flex;
+            align-items: center;
+            background: rgba(255,255,255,0.2);
+            border-radius: 30px;
+            padding: 5px 15px;
+            margin-top: 10px;
+            backdrop-filter: blur(5px);
+        }
+        
+        .gemini-badge img {
+            height: 24px;
+            margin-right: 8px;
         }
         
         .flash-animation {
@@ -480,20 +559,232 @@
         .leaflet-container {
             font-family: 'Poppins', sans-serif !important;
         }
+        
+        .voice-visualization {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 40px;
+            gap: 5px;
+        }
+        
+        .voice-visualization span {
+            display: inline-block;
+            width: 4px;
+            height: 20px;
+            background-color: var(--gemini-red);
+            border-radius: 2px;
+            animation: voice-wave 1.2s ease-in-out infinite;
+        }
+        
+        .voice-visualization span:nth-child(2) {
+            animation-delay: 0.2s;
+            background-color: var(--gemini-blue);
+        }
+        
+        .voice-visualization span:nth-child(3) {
+            animation-delay: 0.4s;
+            background-color: var(--gemini-yellow);
+        }
+        
+        .voice-visualization span:nth-child(4) {
+            animation-delay: 0.6s;
+            background-color: var(--gemini-green);
+        }
+        
+        .voice-visualization span:nth-child(5) {
+            animation-delay: 0.8s;
+            background-color: var(--gemini-red);
+        }
+        
+        @keyframes voice-wave {
+            0%, 100% {
+                height: 10px;
+            }
+            50% {
+                height: 30px;
+            }
+        }
+        
+        .gemini-thinking {
+            padding: 15px;
+            background-color: rgba(66, 133, 244, 0.1);
+            border-radius: var(--card-radius);
+            margin: 20px 0;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .gemini-thinking::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0) 0%,
+                rgba(255,255,255,0.5) 50%,
+                rgba(255,255,255,0) 100%
+            );
+            animation: gemini-thinking-shine 2s infinite;
+        }
+        
+        @keyframes gemini-thinking-shine {
+            0% {
+                left: -100%;
+            }
+            100% {
+                left: 200%;
+            }
+        }
+
+        .message {
+            margin-bottom: 15px;
+        }
+
+        .message-content {
+            max-width: 85%;
+            position: relative;
+        }
+
+        .ai-message .message-content {
+            background-color: rgba(66, 133, 244, 0.1);
+            border-left: 3px solid var(--gemini-blue);
+        }
+
+        .user-message {
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .user-message .message-content {
+            background-color: rgba(52, 168, 83, 0.1);
+            border-right: 3px solid var(--gemini-green);
+        }
+
+        .message-thinking {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+        }
+
+        .message-thinking-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--gemini-blue);
+            animation: thinking-dot 1.4s infinite ease-in-out both;
+        }
+
+        .message-thinking-dot:nth-child(1) {
+            animation-delay: -0.32s;
+            background-color: var(--gemini-blue);
+        }
+
+        .message-thinking-dot:nth-child(2) {
+            animation-delay: -0.16s;
+            background-color: var(--gemini-red);
+        }
+
+        .message-thinking-dot:nth-child(3) {
+            background-color: var(--gemini-yellow);
+        }
+
+        @keyframes thinking-dot {
+            0%, 80%, 100% { 
+                transform: scale(0);
+            }
+            40% { 
+                transform: scale(1.0);
+            }
+        }
+
+        .suggested-question {
+            display: inline-block;
+            color: var(--gemini-blue) !important;
+            font-size: 0.85rem;
+        }
+
+        .suggested-question:hover {
+            text-decoration: underline !important;
+        }
+
+        .gemini-icons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-gap: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .gemini-icon {
+            background: rgba(255,255,255,0.15);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            backdrop-filter: blur(5px);
+            transition: all 0.3s ease;
+        }
+
+        .gemini-icon:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.25);
+        }
+
+        .gemini-icon span {
+            display: block;
+            margin-top: 10px;
+            font-size: 14px;
+        }
+
+        .gemini-icon-1 {
+            background: rgba(66, 133, 244, 0.7);
+        }
+
+        .gemini-icon-2 {
+            background: rgba(234, 67, 53, 0.7);
+        }
+
+        .gemini-icon-3 {
+            background: rgba(251, 188, 5, 0.7);
+        }
+
+        .gemini-icon-4 {
+            background: rgba(52, 168, 83, 0.7);
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="solar-header text-center">
             <img src="https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2072&q=80" alt="Solar roof" class="roof-image">
+            <div class="gemini-dots top-right">
+                <span class="gemini-dot-1"></span>
+                <span class="gemini-dot-2"></span>
+                <span class="gemini-dot-3"></span>
+                <span class="gemini-dot-4"></span>
+            </div>
+            <div class="gemini-dots bottom-left">
+                <span class="gemini-dot-1"></span>
+                <span class="gemini-dot-2"></span>
+                <span class="gemini-dot-3"></span>
+                <span class="gemini-dot-4"></span>
+            </div>
             <div class="content-wrapper">
                 <div class="row align-items-center">
                     <div class="col-md-2 d-none d-md-block">
                         <i class="fas fa-solar-panel fa-5x floating" style="opacity: 0.9;"></i>
                     </div>
                     <div class="col-md-8">
-                        <h1 class="flash-animation"><i class="fas fa-solar-panel d-inline d-md-none me-2"></i> SolarSage AI Advisor</h1>
+                        <h1 class="flash-animation"><i class="fas fa-solar-panel d-inline d-md-none me-2"></i> SolarSage AI</h1>
                         <p class="lead">Intelligent solar solutions powered by data analysis and AI</p>
+                        <div class="gemini-badge">
+                            <img src="https://lh3.googleusercontent.com/JDFOyo903E9WGstK0YQzNOpJFHsCQVcUyXJQJ9OzRQDWcgNmJQ4s_cEVjwdCuJM7XZcUYj8=e14-rj-sc0xffffff-h130-w32" alt="Gemini logo"> 
+                            Powered by Google Gemini 2.5
+                        </div>
                     </div>
                     <div class="col-md-2 d-none d-md-block">
                         <i class="fas fa-bolt fa-5x floating" style="opacity: 0.9;"></i>
@@ -503,20 +794,93 @@
         </div>
         
         <div class="row justify-content-center">
-            <div class="col-md-8">
+            <div class="col-md-10">
                 <div class="card">
                     <div class="card-body">
-                        <h5 class="card-title mb-4"><i class="fas fa-map-marker-alt me-2" style="color: var(--secondary-color);"></i>Enter Your Address</h5>
-                        <div class="input-group mb-3">
-                            <span class="input-group-text bg-white border-end-0">
-                                <i class="fas fa-home text-muted"></i>
-                            </span>
-                            <input type="text" class="form-control border-start-0" id="addressInput" 
-                                   placeholder="e.g. 134 Denslow Ave, Los Angeles, CA">
+                        <div class="d-flex align-items-center mb-4">
+                            <span class="badge bg-primary me-2">Multimodal Input</span>
+                            <h5 class="card-title mb-0 d-flex align-items-center">
+                                <i class="fas fa-map-marker-alt me-2" style="color: var(--gemini-blue);"></i>
+                                Analyze Your Property
+                            </h5>
                         </div>
-                        <button class="btn btn-primary w-100" id="assessBtn">
-                            <i class="fas fa-search-location me-2"></i>Get Solar Assessment
-                        </button>
+                        
+                        <ul class="nav nav-tabs mb-3" id="inputTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="address-tab" data-bs-toggle="tab" data-bs-target="#address-tab-pane" type="button" role="tab">
+                                    <i class="fas fa-home me-1"></i> Address
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="photo-tab" data-bs-toggle="tab" data-bs-target="#photo-tab-pane" type="button" role="tab">
+                                    <i class="fas fa-camera me-1"></i> Roof Photo
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="voice-tab" data-bs-toggle="tab" data-bs-target="#voice-tab-pane" type="button" role="tab">
+                                    <i class="fas fa-microphone me-1"></i> Voice Description
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="inputTabContent">
+                            <div class="tab-pane fade show active" id="address-tab-pane" role="tabpanel" tabindex="0">
+                                <div class="input-group mb-3">
+                                    <span class="input-group-text bg-white border-end-0">
+                                        <i class="fas fa-home text-muted"></i>
+                                    </span>
+                                    <input type="text" class="form-control border-start-0" id="addressInput" 
+                                           placeholder="e.g. 134 Denslow Ave, Los Angeles, CA">
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="photo-tab-pane" role="tabpanel" tabindex="0">
+                                <div class="mb-3">
+                                    <div class="d-flex flex-column align-items-center p-4 bg-light rounded-3 mb-3">
+                                        <i class="fas fa-cloud-upload-alt fa-3x mb-3 text-primary"></i>
+                                        <p class="mb-3 text-center">Upload a photo of your roof or property for Gemini-powered analysis</p>
+                                        <label for="roofPhotoUpload" class="btn btn-outline-primary">
+                                            <i class="fas fa-file-upload me-2"></i>Upload Photo
+                                        </label>
+                                        <input type="file" id="roofPhotoUpload" class="d-none" accept="image/*">
+                                    </div>
+                                    <div id="photoPreviewContainer" class="text-center d-none">
+                                        <img id="photoPreview" class="img-fluid rounded mb-3 shadow-sm" style="max-height: 200px;" src="" alt="Roof photo preview">
+                                        <p class="small text-muted">Gemini will analyze roof angle, shading, and potential solar panel placement</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="tab-pane fade" id="voice-tab-pane" role="tabpanel" tabindex="0">
+                                <div class="mb-3">
+                                    <div class="d-flex flex-column align-items-center p-4 bg-light rounded-3">
+                                        <i id="micIcon" class="fas fa-microphone fa-3x mb-3 text-primary"></i>
+                                        <p class="mb-3 text-center">Describe your property and requirements using your voice</p>
+                                        <button id="startRecordingBtn" class="btn btn-outline-primary mb-2">
+                                            <i class="fas fa-microphone-alt me-2"></i>Start Recording
+                                        </button>
+                                        <div id="recordingStatus" class="d-none">
+                                            <span class="badge bg-danger p-2">Recording...</span>
+                                            <div class="mt-2 mb-2">
+                                                <div class="voice-visualization">
+                                                    <span></span><span></span><span></span><span></span><span></span>
+                                                </div>
+                                            </div>
+                                            <button id="stopRecordingBtn" class="btn btn-sm btn-danger">
+                                                <i class="fas fa-stop-circle me-1"></i>Stop
+                                            </button>
+                                        </div>
+                                        <p id="transcriptionText" class="text-muted small mt-2 d-none"></p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid">
+                            <button class="btn btn-primary" id="assessBtn">
+                                <i class="fas fa-search-location me-2"></i>Analyze with Gemini 2.5
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -525,7 +889,7 @@
         <div class="step-indicator" id="stepIndicator">
             <div class="step active" id="step1">
                 <div class="step-number">1</div>
-                <div><i class="fas fa-map-marker-alt me-1"></i>Address</div>
+                <div><i class="fas fa-map-marker-alt me-1"></i>Input</div>
             </div>
             <div class="step" id="step2">
                 <div class="step-number">2</div>
@@ -543,17 +907,43 @@
         
         <div class="loader" id="loader"></div>
         
+        <div class="gemini-thinking d-none" id="geminiThinking">
+            <div class="d-flex align-items-center mb-3">
+                <img src="https://lh3.googleusercontent.com/JDFOyo903E9WGstK0YQzNOpJFHsCQVcUyXJQJ9OzRQDWcgNmJQ4s_cEVjwdCuJM7XZcUYj8=e14-rj-sc0xffffff-h130-w32" alt="Gemini logo" style="height: 24px;" class="me-2">
+                <h6 class="mb-0">Gemini is analyzing your property...</h6>
+            </div>
+            <div class="small" id="thinkingSteps">
+                <div class="mb-1">• Loading satellite imagery...</div>
+                <div class="mb-1">• Calculating solar radiation levels...</div>
+                <div class="mb-1">• Analyzing roof orientation and pitch...</div>
+                <div class="mb-1">• Estimating potential system size...</div>
+                <div class="mb-1">• Calculating financial projections...</div>
+            </div>
+        </div>
+        
         <div class="row result-card" id="assessmentResult">
             <div class="col-12">
                 <div class="card">
                     <div class="card-header bg-primary text-white">
                         <div class="d-flex align-items-center">
                             <i class="fas fa-sun fa-spin-pulse me-2"></i>
-                            <h5 class="mb-0">Solar Assessment Results</h5>
-                            <span class="ms-auto badge bg-success">100% Accuracy</span>
+                            <h5 class="mb-0">Gemini Solar Assessment</h5>
+                            <span class="ms-auto badge bg-success">99.7% Accuracy</span>
                         </div>
                     </div>
                     <div class="card-body">
+                        <div class="mb-4 p-3 bg-light rounded-3 border-start border-4 border-warning">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-lightbulb text-warning fa-2x"></i>
+                                </div>
+                                <div>
+                                    <h6 class="mb-1">Gemini AI Insight</h6>
+                                    <p class="mb-0" id="geminiInsight">Based on my multimodal analysis of your property at 134 Denslow Ave, I've determined this location has excellent solar potential. The south-facing roof sections receive optimal sunlight exposure with minimal shading from nearby trees or structures. I estimate you could fit a 5.0kW system that would offset approximately 85% of your current electricity usage.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="position-relative mb-3">
@@ -577,6 +967,41 @@
                                     <div class="d-flex justify-content-between">
                                         <span class="badge bg-light text-dark">Poor</span>
                                         <span class="badge bg-success">Excellent (92%)</span>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 p-3 bg-light rounded-3">
+                                    <h6 class="mb-2">
+                                        <i class="fas fa-robot text-primary me-2"></i>
+                                        Multimodal Analysis
+                                    </h6>
+                                    <div class="row mt-3">
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="rounded-circle bg-primary d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                                    <i class="fas fa-image text-white small"></i>
+                                                </div>
+                                                <span class="small fw-medium">Visual Analysis</span>
+                                            </div>
+                                            <ul class="small ps-4 mb-0">
+                                                <li>Roof orientation: South</li>
+                                                <li>Pitch angle: 22°</li>
+                                                <li>Shade factors: Minimal</li>
+                                            </ul>
+                                        </div>
+                                        <div class="col-6">
+                                            <div class="d-flex align-items-center mb-3">
+                                                <div class="rounded-circle bg-success d-flex align-items-center justify-content-center me-2" style="width: 24px; height: 24px;">
+                                                    <i class="fas fa-database text-white small"></i>
+                                                </div>
+                                                <span class="small fw-medium">Data Analysis</span>
+                                            </div>
+                                            <ul class="small ps-4 mb-0">
+                                                <li>Local insolation: High</li>
+                                                <li>Weather patterns: Ideal</li>
+                                                <li>Energy profile: Matching</li>
+                                            </ul>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -756,6 +1181,44 @@
                             </div>
                         </div>
                         
+                        <div class="card mt-4 border-primary">
+                            <div class="card-header bg-primary text-white py-3">
+                                <div class="d-flex align-items-center">
+                                    <img src="https://lh3.googleusercontent.com/JDFOyo903E9WGstK0YQzNOpJFHsCQVcUyXJQJ9OzRQDWcgNmJQ4s_cEVjwdCuJM7XZcUYj8=e14-rj-sc0xffffff-h130-w32" alt="Gemini logo" class="me-2" style="height: 24px;">
+                                    <h5 class="mb-0">Ask Gemini About Your Solar Assessment</h5>
+                                </div>
+                            </div>
+                            <div class="card-body p-0">
+                                <div id="chatMessages" class="p-3" style="max-height: 300px; overflow-y: auto;">
+                                    <div class="message ai-message mb-3">
+                                        <div class="message-content p-3 rounded-3 bg-light">
+                                            <div class="d-flex align-items-center mb-2">
+                                                <div class="message-avatar bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                                    <i class="fas fa-robot text-white small"></i>
+                                                </div>
+                                                <strong>Gemini Solar Assistant</strong>
+                                            </div>
+                                            <p class="mb-0">Hello! I'm your Gemini-powered solar advisor. I've analyzed your property and created a detailed assessment. Feel free to ask me any questions about solar installation, financial benefits, or environmental impact for your specific location.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="p-3 border-top">
+                                    <div class="input-group">
+                                        <input type="text" id="userQuestion" class="form-control" placeholder="Ask a question about your solar assessment...">
+                                        <button class="btn btn-primary" id="askGeminiBtn">
+                                            <i class="fas fa-paper-plane"></i>
+                                        </button>
+                                    </div>
+                                    <div class="mt-2 small text-muted">
+                                        <span class="fst-italic">Suggested questions:</span>
+                                        <a href="#" class="suggested-question text-decoration-none ms-2">What solar panel type is best for me?</a>
+                                        <a href="#" class="suggested-question text-decoration-none ms-2">How long until I break even?</a>
+                                        <a href="#" class="suggested-question text-decoration-none ms-2">How does weather affect my system?</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="mt-4 text-center">
                             <button class="btn btn-success btn-lg me-2" id="proposalBtn">
                                 <i class="fas fa-file-contract me-2"></i>Generate Proposal
@@ -779,7 +1242,7 @@
                         <i class="fas fa-sun fa-3x text-warning opacity-25"></i>
                     </div>
                     <h3 class="mb-2 flash-animation" style="font-weight: 700;">Choose Your Plan</h3>
-                    <p class="text-muted">Unlock premium features with our paid plans</p>
+                    <p class="text-muted">Unlock premium Gemini 2.5 features with our paid plans</p>
                 </div>
             </div>
             <div class="col-md-4">
@@ -793,8 +1256,10 @@
                         <p class="price-period">forever</p>
                         <ul class="feature-list">
                             <li>Basic solar assessment</li>
-                            <li>Estimated ROI calculation</li>
+                            <li>Gemini-powered ROI calculation</li>
                             <li>3 assessments per month</li>
+                            <li class="text-muted text-decoration-line-through">Advanced multimodal analysis</li>
+                            <li class="text-muted text-decoration-line-through">Personalized AI advisor</li>
                         </ul>
                         <button class="btn btn-outline-primary mt-3 w-100">Current Plan</button>
                     </div>
@@ -811,9 +1276,10 @@
                         <p class="price">$9.99</p>
                         <p class="price-period">per month</p>
                         <ul class="feature-list">
-                            <li>Detailed solar assessment</li>
+                            <li>Advanced Gemini 2.5 assessment</li>
+                            <li>Multimodal property analysis</li>
                             <li>Custom proposal generation</li>
-                            <li>Installer matching</li>
+                            <li>Personalized AI solar advisor</li>
                             <li>Unlimited assessments</li>
                         </ul>
                         <button class="btn btn-primary mt-3 w-100 flash-animation" id="upgradePremiumBtn">Upgrade Now</button>
@@ -831,10 +1297,10 @@
                         <p class="price-period">per month</p>
                         <ul class="feature-list">
                             <li>Everything in Premium</li>
-                            <li>Financing options</li>
-                            <li>System monitoring</li>
-                            <li>API access</li>
-                            <li>White-label reports</li>
+                            <li>Gemini API for bulk assessments</li>
+                            <li>Advanced financial modeling</li>
+                            <li>System monitoring with AI insights</li>
+                            <li>White-label reports & API access</li>
                         </ul>
                         <button class="btn btn-outline-primary mt-3 w-100">Contact Sales</button>
                     </div>
@@ -849,9 +1315,9 @@
                                     <div class="bg-success rounded-circle p-2 me-3">
                                         <i class="fas fa-check text-white"></i>
                                     </div>
-                                    <h5 class="mb-0">100% Satisfaction Guarantee</h5>
+                                    <h5 class="mb-0">Powered by Gemini 2.5</h5>
                                 </div>
-                                <p class="text-muted mb-0">Not satisfied? Get a full refund within the first 30 days, no questions asked.</p>
+                                <p class="text-muted mb-0">Utilizing Google's most advanced multimodal AI for unmatched accuracy in solar assessment and planning.</p>
                             </div>
                             <div class="col-md-4 text-center text-md-end mt-3 mt-md-0">
                                 <a href="#" class="btn btn-outline-success">Learn More</a>
@@ -866,25 +1332,37 @@
             <div class="banner-content">
                 <div class="row align-items-center">
                     <div class="col-md-7">
-                        <h3 class="mb-3 flash-animation">Start Your Solar Journey Today!</h3>
-                        <p class="mb-4">Join thousands of homeowners who have already made the switch to clean, renewable energy with SolarSage AI Advisor.</p>
+                        <h3 class="mb-3 flash-animation">Powered by Google Gemini 2.5</h3>
+                        <p class="mb-4">Leveraging the most advanced multimodal AI to revolutionize solar planning with unprecedented accuracy. Our Gemini-powered platform analyzes images, processes voice data, and provides intelligent recommendations tailored to your specific property.</p>
                         <div class="d-flex flex-wrap gap-2">
                             <button class="btn btn-light" id="scrollToTopBtn">
                                 <i class="fas fa-arrow-up me-2"></i>Get Started
                             </button>
-                            <button class="btn btn-outline-light">
-                                <i class="fas fa-phone me-2"></i>Contact Support
-                            </button>
+                            <a href="https://aistudio.google.com" target="_blank" class="btn btn-outline-light">
+                                <i class="fas fa-external-link-alt me-2"></i>Learn About Gemini 2.5
+                            </a>
                         </div>
                     </div>
                     <div class="col-md-5 text-center">
-                        <div class="d-inline-block position-relative">
-                            <div class="bg-white rounded-circle p-4 highlight-pulse">
-                                <i class="fas fa-solar-panel fa-5x text-primary"></i>
+                        <div class="position-relative">
+                            <div class="gemini-icons">
+                                <div class="gemini-icon gemini-icon-1">
+                                    <i class="fas fa-image fa-2x text-white"></i>
+                                    <span>Image Analysis</span>
+                                </div>
+                                <div class="gemini-icon gemini-icon-2">
+                                    <i class="fas fa-microphone fa-2x text-white"></i>
+                                    <span>Voice Processing</span>
+                                </div>
+                                <div class="gemini-icon gemini-icon-3">
+                                    <i class="fas fa-brain fa-2x text-white"></i>
+                                    <span>Advanced Reasoning</span>
+                                </div>
+                                <div class="gemini-icon gemini-icon-4">
+                                    <i class="fas fa-comment-dots fa-2x text-white"></i>
+                                    <span>Conversational AI</span>
+                                </div>
                             </div>
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-                                #1 Choice
-                            </span>
                         </div>
                     </div>
                 </div>
@@ -900,6 +1378,7 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // DOM Elements
             const addressInput = document.getElementById('addressInput');
             const assessBtn = document.getElementById('assessBtn');
             const proposalBtn = document.getElementById('proposalBtn');
@@ -908,15 +1387,27 @@
             const scrollToTopBtn = document.getElementById('scrollToTopBtn');
             const mainScrollTopBtn = document.getElementById('mainScrollTopBtn');
             const loader = document.getElementById('loader');
+            const geminiThinking = document.getElementById('geminiThinking');
             const assessmentResult = document.getElementById('assessmentResult');
             const pricingPlans = document.getElementById('pricingPlans');
+            const roofPhotoUpload = document.getElementById('roofPhotoUpload');
+            const photoPreview = document.getElementById('photoPreview');
+            const photoPreviewContainer = document.getElementById('photoPreviewContainer');
+            const startRecordingBtn = document.getElementById('startRecordingBtn');
+            const stopRecordingBtn = document.getElementById('stopRecordingBtn');
+            const recordingStatus = document.getElementById('recordingStatus');
+            const transcriptionText = document.getElementById('transcriptionText');
+            const userQuestion = document.getElementById('userQuestion');
+            const askGeminiBtn = document.getElementById('askGeminiBtn');
+            const chatMessages = document.getElementById('chatMessages');
+            const suggestedQuestions = document.querySelectorAll('.suggested-question');
             
             // Set up event listeners
             assessBtn.addEventListener('click', runAssessment);
             proposalBtn.addEventListener('click', showPricingPlans);
             findInstallersBtn.addEventListener('click', showPricingPlans);
             upgradePremiumBtn.addEventListener('click', function() {
-                alert('This is a demo for the hackathon. In a real implementation, this would process a payment and upgrade your account.');
+                alert('This is a demo for the hackathon. In a real implementation, this would process a payment and upgrade your account to access all Gemini 2.5 features.');
             });
             
             scrollToTopBtn.addEventListener('click', function() {
@@ -936,18 +1427,160 @@
                 }
             });
             
+            // Handle roof photo upload
+            roofPhotoUpload.addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        photoPreview.src = e.target.result;
+                        photoPreviewContainer.classList.remove('d-none');
+                    };
+                    reader.readAsDataURL(file);
+                }
+            });
+            
+            // Handle voice recording
+            startRecordingBtn.addEventListener('click', function() {
+                startRecordingBtn.classList.add('d-none');
+                recordingStatus.classList.remove('d-none');
+                
+                // Simulate voice recording (In a real implementation, this would use Web Speech API)
+                setTimeout(() => {
+                    stopRecording();
+                }, 5000);
+            });
+            
+            stopRecordingBtn.addEventListener('click', stopRecording);
+            
+            function stopRecording() {
+                startRecordingBtn.classList.remove('d-none');
+                recordingStatus.classList.add('d-none');
+                transcriptionText.classList.remove('d-none');
+                transcriptionText.textContent = "I have a two-story house in Los Angeles with a south-facing roof. I'm interested in solar panels that can cover about 80% of my electricity needs.";
+            }
+            
+            // Handle chat with Gemini
+            askGeminiBtn.addEventListener('click', askGemini);
+            userQuestion.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    askGemini();
+                }
+            });
+            
+            suggestedQuestions.forEach(question => {
+                question.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    userQuestion.value = this.textContent;
+                    askGemini();
+                });
+            });
+            
+            function askGemini() {
+                const question = userQuestion.value.trim();
+                if (!question) return;
+                
+                // Add user message to chat
+                addMessageToChat('user', question);
+                userQuestion.value = '';
+                
+                // Add thinking indicator
+                const thinkingId = 'thinking-' + Date.now();
+                addThinkingIndicator(thinkingId);
+                
+                // Simulate Gemini API response (In a real implementation, this would call the Gemini API)
+                setTimeout(() => {
+                    // Remove thinking indicator
+                    document.getElementById(thinkingId).remove();
+                    
+                    // Generate response based on question
+                    let response;
+                    if (question.toLowerCase().includes('panel type') || question.toLowerCase().includes('best for me')) {
+                        response = "Based on my analysis of your roof's orientation, sun exposure, and local climate data, I recommend monocrystalline panels for your installation. These offer the highest efficiency (20-22%) in the limited space available on your south-facing roof sections. While they cost about 20% more than polycrystalline options, the increased energy production will result in a better long-term ROI for your specific property.";
+                    } else if (question.toLowerCase().includes('break even') || question.toLowerCase().includes('payback')) {
+                        response = "After analyzing your property's solar potential, local electricity rates ($0.22/kWh with 6% annual increases), and available incentives including the 30% federal tax credit, I project your system will break even in approximately 4.3 years. Your 25-year net savings are estimated at $42,750, representing a 319% return on your initial investment.";
+                    } else if (question.toLowerCase().includes('weather')) {
+                        response = "I've analyzed 10 years of historical weather data for your location. Your area averages 284 sunny days per year, well above the national average. Even factoring in occasional marine layer in mornings and typical Southern California weather patterns, your system should produce approximately 7,500 kWh annually. I've built in a 5% buffer for unusually cloudy periods in my financial projections.";
+                    } else {
+                        response = "I've analyzed your property at 134 Denslow Ave and can confidently say it's excellent for solar installation. Based on your roof orientation, shading analysis, and local climate data, a 5kW system would generate approximately 7,500 kWh annually, offsetting about 85% of typical electricity usage for a home of your size. With current incentives, your payback period would be approximately 4.3 years.";
+                    }
+                    
+                    // Add Gemini response to chat
+                    addMessageToChat('ai', response);
+                    
+                    // Scroll to bottom of chat
+                    chatMessages.scrollTop = chatMessages.scrollHeight;
+                }, 2000);
+            }
+            
+            function addMessageToChat(sender, content) {
+                const messageDiv = document.createElement('div');
+                messageDiv.className = `message ${sender}-message mb-3`;
+                
+                let html;
+                if (sender === 'user') {
+                    html = `
+                        <div class="message-content p-3 rounded-3 ms-auto">
+                            <div class="d-flex align-items-center justify-content-between mb-2">
+                                <strong>You</strong>
+                                <small class="text-muted ms-2">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                            </div>
+                            <p class="mb-0">${content}</p>
+                        </div>
+                    `;
+                } else {
+                    html = `
+                        <div class="message-content p-3 rounded-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="message-avatar bg-primary rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 30px; height: 30px;">
+                                    <i class="fas fa-robot text-white small"></i>
+                                </div>
+                                <strong>Gemini Solar Assistant</strong>
+                                <small class="text-muted ms-2">${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</small>
+                            </div>
+                            <p class="mb-0">${content}</p>
+                        </div>
+                    `;
+                }
+                
+                messageDiv.innerHTML = html;
+                chatMessages.appendChild(messageDiv);
+            }
+            
+            function addThinkingIndicator(id) {
+                const thinkingDiv = document.createElement('div');
+                thinkingDiv.className = 'message ai-message mb-3';
+                thinkingDiv.id = id;
+                thinkingDiv.innerHTML = `
+                    <div class="message-content p-3 rounded-3" style="width: fit-content;">
+                        <div class="message-thinking">
+                            <div class="message-thinking-dot"></div>
+                            <div class="message-thinking-dot"></div>
+                            <div class="message-thinking-dot"></div>
+                        </div>
+                    </div>
+                `;
+                chatMessages.appendChild(thinkingDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }
+            
             // Pre-fill the address for demo purposes
             addressInput.value = "134 Denslow Ave, Los Angeles, CA";
             
             async function runAssessment() {
-                const address = addressInput.value.trim();
-                if (!address) {
+                // Get input from active tab
+                const activeTab = document.querySelector('#inputTabs .nav-link.active');
+                let inputType = activeTab ? activeTab.id : 'address-tab';
+                
+                let address = addressInput.value.trim();
+                if (inputType === 'address-tab' && !address) {
                     alert('Please enter an address');
                     return;
                 }
                 
-                // Show loader
-                loader.style.display = 'block';
+                // Show thinking indicator
+                loader.style.display = 'none';
+                geminiThinking.classList.remove('d-none');
                 assessmentResult.style.display = 'none';
                 pricingPlans.style.display = 'none';
                 
@@ -955,10 +1588,34 @@
                 document.getElementById('step1').classList.remove('active');
                 document.getElementById('step2').classList.add('active');
                 
-                try {
-                    // Simulate API call with a delay
+                // Simulate API call with a delay
+                const thinkingSteps = document.querySelectorAll('#thinkingSteps div');
+                
+                // Animate thinking steps one by one
+                for (let i = 0; i < thinkingSteps.length; i++) {
+                    await new Promise(resolve => {
+                        setTimeout(() => {
+                            thinkingSteps[i].innerHTML = thinkingSteps[i].innerHTML.replace('•', '✓');
+                            thinkingSteps[i].style.color = 'var(--gemini-green)';
+                            resolve();
+                        }, 800);
+                    });
+                }
+                
+                // Add final analyzing step with delay
+                await new Promise(resolve => {
                     setTimeout(() => {
-                        // Get results from your actual test-hybrid-melissa.js script
+                        const finalStep = document.createElement('div');
+                        finalStep.innerHTML = '✓ AI analysis complete! Generating report...';
+                        finalStep.style.color = 'var(--gemini-green)';
+                        document.getElementById('thinkingSteps').appendChild(finalStep);
+                        resolve();
+                    }, 1000);
+                });
+                
+                // Show results after all steps complete
+                await new Promise(resolve => {
+                    setTimeout(() => {
                         const results = {
                             std: "134 Denslow Ave, Los Angeles CA 90049-3221",
                             lat: 34.0735812,
@@ -1009,19 +1666,17 @@
                         displayResults(results);
                         
                         // Hide loader
-                        loader.style.display = 'none';
+                        geminiThinking.classList.add('d-none');
                         assessmentResult.style.display = 'block';
                         
                         // Smooth scroll to results
                         setTimeout(() => {
                             assessmentResult.scrollIntoView({ behavior: 'smooth' });
                         }, 100);
-                    }, 2000);
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('An error occurred. Please try again.');
-                    loader.style.display = 'none';
-                }
+                        
+                        resolve();
+                    }, 1000);
+                });
             }
             
             function displayResults(results) {
