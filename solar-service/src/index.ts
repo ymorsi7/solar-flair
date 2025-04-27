@@ -192,11 +192,11 @@ const getWeatherForecastConfig: ToolConfig = {
 
 const dainService = defineDAINService({
   metadata: {
-    title: "Weather DAIN Service",
+    title: "ahmed DAIN Service",
     description:
       "A DAIN service for current weather and forecasts using Open-Meteo API",
     version: "1.0.0",
-    author: "Your Name",
+    author: "ahmed",
     tags: ["weather", "forecast", "dain"],
     logo: "https://cdn-icons-png.flaticon.com/512/252/252035.png",
   },
