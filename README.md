@@ -11,7 +11,7 @@
 
 In a world increasingly threatened by climate disasters, SolarFlair goes beyond basic solar analysis to deliver **life-saving emergency preparedness** features:
 
-1. **Real Disaster Resilience** - Unlike drone-based solutions that only monitor disasters, SolarFlair provides actual protection against them through energy independence
+1. **Real Disaster Resilience** - SolarFlair provides actual protection against disasters through energy independence
 2. **Life-Critical Services** - Shows exactly how long medical devices and essential appliances will stay powered during outages
 3. **Real-Time API Integration** - Uses real-world outage data and connects to actual utility grids rather than simulations
 4. **Complete Solution** - Offers end-to-end solar planning from property analysis to financial modeling to disaster preparedness
@@ -70,7 +70,6 @@ Advanced satellite imagery with:
 - Multi-source geocoding for reliability
 
 ### 🔴 6. Emergency Resilience Planning (EXCLUSIVE FEATURE) 🔴
-**Our competitive advantage** - unlike drone teams that can only monitor disasters, we help people SURVIVE them:
 
 - Critical load analysis showing exactly how long life-saving equipment will run during outages
 - Historical outage data specific to the user's location
@@ -151,7 +150,7 @@ npm run dev
 
 ## 🏆 Why We Win
 
-While other teams focus on monitoring disasters (like the drone team), **SolarFlair empowers people to survive them**. Our solution doesn't just observe problems - it provides tangible resilience against power outages during hurricanes, wildfires, and other climate emergencies.
+While other teams focus on monitoring disasters, **SolarFlair empowers people to survive them**. Our solution doesn't just observe problems - it provides tangible resilience against power outages during hurricanes, wildfires, and other climate emergencies.
 
 Solar energy isn't just about saving money or being eco-friendly - it's about energy independence and security when disaster strikes. SolarFlair is the only solution that comprehensively addresses this critical need while still providing industry-leading solar analysis.
 
