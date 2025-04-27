@@ -3,10 +3,23 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-DAIN-blue)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/e5411679-4aa5-4c91-b7cb-ca45549bf7c5/deploy-status)](https://app.netlify.com/sites/gorgeous-pothos-ccc792/deploys)
 
 
 **SolarFlair** is a comprehensive solar energy intelligence platform designed to help users understand their solar potential and plan for energy resilience in the face of potential disasters. It has a unique resilience planning feature sthat provides critical insights to keep solar-powered setup running smoothly even in the the case of natural disasters.
 
+<<<<<<< HEAD
+=======
+## 🔥 Why SolarFlair Wins This Hackathon 🔥
+
+In a world increasingly threatened by climate disasters, SolarFlair goes beyond basic solar analysis to deliver **life-saving emergency preparedness** features:
+
+1. **Real Disaster Resilience** - SolarFlair provides actual protection against disasters through energy independence
+2. **Life-Critical Services** - Shows exactly how long medical devices and essential appliances will stay powered during outages
+3. **Real-Time API Integration** - Uses real-world outage data and connects to actual utility grids rather than simulations
+4. **Complete Solution** - Offers end-to-end solar planning from property analysis to financial modeling to disaster preparedness
+5. **Practical Implementation** - Uses production-level APIs (NREL, Gemini AI, Mapbox) for immediate real-world application
+>>>>>>> d908f5fafb3a0c9c4a740c619cbe3a74020a8c36
 
 ## 🧠 Advanced AI Integration
 
@@ -60,9 +73,13 @@ Interactive visualizations showing:
 
 ![Evironmental Impact Example](public/assets/images/carbon_footprint.png)
 
+<<<<<<< HEAD
 
 ### 5. Emergency Resilience Planning 
 **Our competitive advantage** - unlike drone teams that can only monitor disasters, we help people SURVIVE them:
+=======
+### 🔴 6. Emergency Resilience Planning (EXCLUSIVE FEATURE) 🔴
+>>>>>>> d908f5fafb3a0c9c4a740c619cbe3a74020a8c36
 
 - Critical load analysis showing exactly how long life-saving equipment will run during outages
 - Historical outage data specific to the user's location
@@ -138,6 +155,17 @@ If you haven't activated the dev mode in your settings, you can follow the [DAIN
 - "What critical appliances could my solar system power during a grid outage?"
 - "How long would my solar system keep my refrigerator running during a power outage?"
 
+<<<<<<< HEAD
+=======
+## 🏆 Why We Win
+
+While other teams focus on monitoring disasters, **SolarFlair empowers people to survive them**. Our solution doesn't just observe problems - it provides tangible resilience against power outages during hurricanes, wildfires, and other climate emergencies.
+
+Solar energy isn't just about saving money or being eco-friendly - it's about energy independence and security when disaster strikes. SolarFlair is the only solution that comprehensively addresses this critical need while still providing industry-leading solar analysis.
+
+**SolarFlair doesn't just help the environment - it helps save lives.**
+
+>>>>>>> d908f5fafb3a0c9c4a740c619cbe3a74020a8c36
 ---
 
 ## License
