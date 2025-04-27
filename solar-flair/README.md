@@ -98,6 +98,20 @@ SolarFlair leverages Gemini 2.5's multimodal capabilities in several innovative 
 - Community solar investment opportunities for those unable to install panels
 - Grid impact analysis for utility companies and policymakers
 
+## 🌐 Contribution
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the project
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
 ## 🏆 About the Hackathon
 
-This project was developed for the "Google Gemini: Chase the Future!" Hackathon, showcasing innovative applications of the Gemini 2.5 API to create real-world solutions that contribute to environmental sustainability.
+This project was developed for the "Google Gemini: Chase the Future!" Hackathon, showcasing innovative applications of the Gemini 2.5 API to create real-world solutions that contribute to environmental sustainability. 
