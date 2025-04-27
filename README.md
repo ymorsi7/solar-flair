@@ -5,35 +5,28 @@
 ![Platform](https://img.shields.io/badge/platform-DAIN-blue)
 
 
-**SolarFlair** is a comprehensive solar energy intelligence platform that not only helps users understand their solar potential but also provides critical resilience planning for disaster scenarios - a unique feature that sets us apart from all competitors.
+**SolarFlair** is a comprehensive solar energy intelligence platform designed to help users understand their solar potential and plan for energy resilience in the face of potential disasters. It has a unique resilience planning feature sthat provides critical insights to keep solar-powered setup running smoothly even in the the case of natural disasters.
 
-## 🔥 Why SolarFlair Wins This Hackathon 🔥
-
-In a world increasingly threatened by climate disasters, SolarFlair goes beyond basic solar analysis to deliver **life-saving emergency preparedness** features:
-
-1. **Real Disaster Resilience** - Unlike drone-based solutions that only monitor disasters, SolarFlair provides actual protection against them through energy independence
-2. **Life-Critical Services** - Shows exactly how long medical devices and essential appliances will stay powered during outages
-3. **Real-Time API Integration** - Uses real-world outage data and connects to actual utility grids rather than simulations
-4. **Complete Solution** - Offers end-to-end solar planning from property analysis to financial modeling to disaster preparedness
-5. **Practical Implementation** - Uses production-level APIs (NREL, Gemini AI, Mapbox) for immediate real-world application
 
 ## 🧠 Advanced AI Integration
 
 SolarFlair leverages the latest in AI technology:
 - **Google Gemini 2.0 Flash** for property analysis and system recommendations
-- **Robust multi-API fallback system** that cascades through services to ensure reliability
+- **Multi-API fallback system** that cascades through services to ensure reliability
 - **Data normalization layer** that handles diverse API responses and formats
 - **Smart geocoding system** using both Google Maps API and Mapbox for precise location data
 
-## 🔋 Featured Tools & Services
+## 🛠️ Featured Tools & Services
 
 ### 1. Property Analysis & Solar Potential
-Leverages Google's Gemini AI and satellite imagery to analyze any property address and provide precise solar potential metrics:
+Leverages Google's Gemini AI and satellite imagery to analyze any property address and provide  solar potential metrics, such as:
 - Roof size, slope, and condition assessment
 - Solar suitability score based on location, shading, and orientation
-- Interactive satellite imagery with precise geolocated results
+- Interactive satellite imagery with exact geolocated results
 - Automatic fallback to NREL data for reliability
 - Support for residential, commercial, and industrial properties
+
+![Solar Analysis Example](public/assets/images/analysis.png)
 
 ### 2. Solar System Recommendations
 Provides AI-powered system design recommendations based on:
@@ -44,6 +37,8 @@ Provides AI-powered system design recommendations based on:
 - Panel count and wattage optimization
 - Monthly production forecasting
 
+![Recommendation Example](public/assets/images/recommendation.png)
+
 ### 3. Financial Analysis
 Comprehensive financial modeling including:
 - Complete system cost breakdown
@@ -53,6 +48,8 @@ Comprehensive financial modeling including:
 - Financing options comparison (cash vs. loan vs. lease)
 - 20-year cumulative savings visualization
 
+![Forecast Example](public/assets/images/financial_forecast.png)
+
 ### 4. Environmental Impact Visualization
 Interactive visualizations showing:
 - Monthly energy production forecasts
@@ -61,15 +58,10 @@ Interactive visualizations showing:
 - Climate impact assessments
 - Personalized environmental impact dashboards
 
-### 5. Property Visualization
-Advanced satellite imagery with:
-- High-resolution property visualization
-- Solar panel placement simulation
-- Interactive zoom and pan controls
-- Location-specific shading analysis
-- Multi-source geocoding for reliability
+![Evironmental Impact Example](public/assets/images/carbon_footprint.png)
 
-### 🔴 6. Emergency Resilience Planning (EXCLUSIVE FEATURE) 🔴
+
+### 5. Emergency Resilience Planning 
 **Our competitive advantage** - unlike drone teams that can only monitor disasters, we help people SURVIVE them:
 
 - Critical load analysis showing exactly how long life-saving equipment will run during outages
@@ -79,10 +71,12 @@ Advanced satellite imagery with:
 - Emergency preparedness recommendations
 - Hour-by-hour backup duration calculations for critical devices
 
+![Resilience Example](public/assets/images/resilience.png)
+
 ## 💡 Smart Fallback System
 
 SolarFlair is built with reliability at its core:
-- Multi-API geocoding cascades from Google Maps to Mapbox
+- Multi-API geocoding pipelines from Google Maps to Mapbox
 - Property analysis falls back from Gemini AI to NREL's scientific data
 - System recommendations include both AI-generated and scientifically calculated options
 - All components handle API failures gracefully with informative alerts
@@ -97,15 +91,6 @@ SolarFlair integrates multiple advanced technologies:
 - **Mapbox** for high-resolution satellite visualization
 - **Google Maps API** for primary geocoding
 - **Real-time utility outage data** integration
-
-## 📊 Visualization Features
-
-- Interactive satellite maps with property markers
-- Monthly and annual production charts
-- Financial projection graphs with cumulative savings
-- Outage history visualizations
-- Environmental impact dashboards
-- Critical device backup duration tables
 
 ## 🚀 Installation & Usage
 
@@ -126,6 +111,10 @@ export GOOGLE_API="your_key_here"
 # Start the service
 npm run dev
 ```
+
+Assuming you have the dev mode turned on in butterfly, navigate to the [website](https://lahacks-assistant.dain.org/) and click on **+ Services** in the prompt bar. Copy the tunnel URL that appears in your terminal and then click **Add Dev**. 
+
+If you haven't activated the dev mode in your settings, you can follow the [DAIN documentation](https://lahacks-docs.dain.org/docs/getting-started/services/test-out) for more details about usage.
 
 ## 🌐 Example Queries
 
@@ -148,14 +137,6 @@ npm run dev
 - "How would a solar system with battery backup keep my home powered during a wildfire or emergency?"
 - "What critical appliances could my solar system power during a grid outage?"
 - "How long would my solar system keep my refrigerator running during a power outage?"
-
-## 🏆 Why We Win
-
-While other teams focus on monitoring disasters (like the drone team), **SolarFlair empowers people to survive them**. Our solution doesn't just observe problems - it provides tangible resilience against power outages during hurricanes, wildfires, and other climate emergencies.
-
-Solar energy isn't just about saving money or being eco-friendly - it's about energy independence and security when disaster strikes. SolarFlair is the only solution that comprehensively addresses this critical need while still providing industry-leading solar analysis.
-
-**SolarFlair doesn't just help the environment - it helps save lives.**
 
 ---
 
