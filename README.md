@@ -3,6 +3,7 @@
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)
 ![Platform](https://img.shields.io/badge/platform-DAIN-blue)
+[![Netlify Status](https://api.netlify.com/api/v1/badges/e5411679-4aa5-4c91-b7cb-ca45549bf7c5/deploy-status)](https://app.netlify.com/sites/gorgeous-pothos-ccc792/deploys)
 
 
 **SolarFlair** is a comprehensive solar energy intelligence platform that not only helps users understand their solar potential but also provides critical resilience planning for disaster scenarios - a unique feature that sets us apart from all competitors.
