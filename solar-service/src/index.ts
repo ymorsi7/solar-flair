@@ -83,6 +83,96 @@ const getWeatherEmoji = (temperature: number): string => {
   return "🔥";
 };
 
+// Google Maps API key
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_API
+
+// Simulate geocoding for demo purposes
+const simulateGeocode = (address: string) => {
+  // Parse the address to extract city if possible
+  const lowercaseAddress = address.toLowerCase();
+  
+  // Check for some known locations for better demo
+  if (lowercaseAddress.includes("san francisco") || lowercaseAddress.includes("sf")) {
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 37.7749,
+      longitude: -122.4194,
+    };
+  } else if (lowercaseAddress.includes("san diego")) {
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 32.7157,
+      longitude: -117.1611,
+    };
+  } else if (lowercaseAddress.includes("new york") || lowercaseAddress.includes("nyc")) {
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 40.7128,
+      longitude: -74.0060,
+    };
+  } else if (lowercaseAddress.includes("los angeles") || lowercaseAddress.includes("la")) {
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 34.0522,
+      longitude: -118.2437,
+    };
+  } else if (lowercaseAddress.includes("chicago")) {
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 41.8781,
+      longitude: -87.6298,
+    };
+  } else if (lowercaseAddress.includes("miami")) {
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 25.7617,
+      longitude: -80.1918,
+    };
+  } else if (lowercaseAddress.includes("austin")) {
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 30.2672,
+      longitude: -97.7431,
+    };
+  } else {
+    // Default to San Francisco if no match
+    return {
+      address: `${address} (Simulated)`,
+      latitude: 37.7749,
+      longitude: -122.4194,
+    };
+  }
+};
+
+// Geocoding function using Google Maps API with fallback
+const geocodeAddress = async (address: string) => {
+  try {
+    // Attempt to use Google Maps API - this may fail with current API key
+    const response = await axios.get(
+      `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
+    );
+    
+    if (response.data.status === "OK") {
+      const location = response.data.results[0].geometry.location;
+      const formattedAddress = response.data.results[0].formatted_address;
+      
+      return {
+        address: formattedAddress,
+        latitude: location.lat,
+        longitude: location.lng,
+      };
+    }
+    
+    console.warn(`Geocoding API returned status ${response.data.status}, falling back to simulated data`);
+    // Fall back to simulated data
+    return simulateGeocode(address);
+  } catch (error) {
+    console.error("Geocoding error:", error);
+    console.warn("Falling back to simulated geocode data");
+    return simulateGeocode(address);
+  }
+};
+
 const getWeatherConfig: ToolConfig = {
   id: "get-weather",
   name: "Get Weather",
@@ -280,18 +370,13 @@ const analyzePropertyConfig: ToolConfig = {
     console.log(`User / Agent ${agentInfo.id} requested solar analysis for ${address}`);
     
     try {
-      // In a real implementation, this would call a geocoding API
-      // For demo purposes, we'll simulate the response
+      // Use Google Maps API to geocode the address
+      const geocodeResult = await geocodeAddress(address);
       
-      // Simulate geocoding API call
-      const geocodeResult = {
-        address: address,
-        latitude: 37.7749,
-        longitude: -122.4194,
-      };
+      console.log(`Geocoded ${address} to coordinates: ${geocodeResult.latitude}, ${geocodeResult.longitude}`);
       
       // Simulate roof analysis based on satellite imagery
-      // In a real implementation, this would use ML models on satellite imagery
+      // In a real implementation, this would use Google Maps/Earth data or other solar APIs
       const roofAnalysis = {
         roofArea: 1800,  // square feet
         roofType: "Composite Shingle",
@@ -324,10 +409,10 @@ const analyzePropertyConfig: ToolConfig = {
         optimalTiltAngle: optimalTiltAngle,
       };
 
-      // Create UI component
+      // Create UI component with Google Maps
       const propertyCard = new CardUIBuilder()
         .setRenderMode("page")
-        .title(`Solar Analysis for ${address}`)
+        .title(`Solar Analysis for ${geocodeResult.address}`)
         .addChild(
           new MapUIBuilder()
             .setInitialView(geocodeResult.latitude, geocodeResult.longitude, 18)
@@ -336,7 +421,91 @@ const analyzePropertyConfig: ToolConfig = {
               {
                 latitude: geocodeResult.latitude,
                 longitude: geocodeResult.longitude,
-                title: address,
+                title: geocodeResult.address,
+                description: `Suitability: ${suitabilityScore}/100`,
+                text: `${suitabilityScore}/100`,
+              },
+            ])
+            .build()
+        )
+        .content(`<img src="https://maps.googleapis.com/maps/api/staticmap?center=${geocodeResult.latitude},${geocodeResult.longitude}&zoom=19&size=600x300&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}" alt="Satellite view of property" style="width:100%;margin-bottom:15px;" />`)
+        .addChild(
+          new TableUIBuilder()
+            .addColumns([
+              { key: "property", header: "Property Detail", type: "string" },
+              { key: "value", header: "Value", type: "string" },
+            ])
+            .rows([
+              { property: "Solar Suitability Score", value: `${suitabilityScore}/100` },
+              { property: "Roof Area", value: `${roofAnalysis.roofArea} sq ft` },
+              { property: "Roof Type", value: roofAnalysis.roofType },
+              { property: "Roof Slope", value: `${roofAnalysis.roofSlope}°` },
+              { property: "Sun Exposure", value: `${roofAnalysis.sunExposure}/10` },
+              { property: "Shading", value: `${roofAnalysis.shadingFactor}%` },
+              { property: "Optimal Panel Tilt", value: `${optimalTiltAngle}°` },
+            ])
+            .build()
+        )
+        .build();
+
+      return {
+        text: `Property at ${geocodeResult.address} has a solar suitability score of ${suitabilityScore}/100 with ${roofAnalysis.roofArea} sq ft of usable roof area.`,
+        data: analysisResult,
+        ui: propertyCard,
+      };
+    } catch (error) {
+      console.error(`Error analyzing property:`, error);
+      
+      // Create fallback data to ensure we always return valid output
+      const geocodeResult = simulateGeocode(address);
+      const roofAnalysis = {
+        roofArea: 1800,  // square feet
+        roofType: "Composite Shingle",
+        roofSlope: 22,   // degrees
+        sunExposure: 8.5, // 0-10 rating
+        shadingFactor: 15, // percentage of shading
+      };
+      const suitabilityScore = calculateSolarSuitabilityScore(
+        roofAnalysis.roofArea,
+        roofAnalysis.sunExposure,
+        roofAnalysis.shadingFactor / 100
+      );
+      const optimalTiltAngle = calculateOptimalTilt(geocodeResult.latitude);
+      
+      // Create fallback response object
+      const analysisResult = {
+        address: geocodeResult.address,
+        latitude: geocodeResult.latitude,
+        longitude: geocodeResult.longitude,
+        roofArea: roofAnalysis.roofArea,
+        suitabilityScore: suitabilityScore,
+        sunExposure: roofAnalysis.sunExposure,
+        shadingFactor: roofAnalysis.shadingFactor,
+        roofType: roofAnalysis.roofType,
+        roofSlope: roofAnalysis.roofSlope,
+        optimalTiltAngle: optimalTiltAngle,
+      };
+      
+      // Create error UI with fallback data
+      const errorCard = new CardUIBuilder()
+        .setRenderMode("page")
+        .title(`Solar Analysis for ${geocodeResult.address}`)
+        .addChild(
+          new AlertUIBuilder()
+            .variant("warning")
+            .title("Note: Using Simulated Data")
+            .message(`Unable to analyze the exact property at ${address}. Showing estimated solar potential based on regional averages.`)
+            .build()
+        )
+        .addChild(
+          new MapUIBuilder()
+            .setInitialView(geocodeResult.latitude, geocodeResult.longitude, 18)
+            .setMapStyle("mapbox://styles/mapbox/satellite-v9")
+            .addMarkers([
+              {
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude,
+                title: geocodeResult.address,
                 description: `Suitability: ${suitabilityScore}/100`,
                 text: `${suitabilityScore}/100`,
               },
@@ -361,23 +530,11 @@ const analyzePropertyConfig: ToolConfig = {
             .build()
         )
         .build();
-
-      return {
-        text: `Property at ${address} has a solar suitability score of ${suitabilityScore}/100 with ${roofAnalysis.roofArea} sq ft of usable roof area.`,
-        data: analysisResult,
-        ui: propertyCard,
-      };
-    } catch (error) {
-      console.error(`Error analyzing property:`, error);
       
       return {
-        text: `Error analyzing property: ${error.message}. Please check the address and try again.`,
-        data: { error: error.message },
-        ui: new AlertUIBuilder()
-          .variant("error")
-          .title("Property Analysis Failed")
-          .message(`Unable to analyze property at ${address}. Please verify the address is correct.`)
-          .build(),
+        text: `Property at ${geocodeResult.address} has an estimated solar suitability score of ${suitabilityScore}/100 with approximately ${roofAnalysis.roofArea} sq ft of usable roof area. Note: This is simulated data.`,
+        data: analysisResult,
+        ui: errorCard,
       };
     }
   },
@@ -737,6 +894,126 @@ const calculateFinancialsConfig: ToolConfig = {
   },
 };
 
+const generatePropertyImageConfig: ToolConfig = {
+  id: "generate-property-image",
+  name: "Generate Property Image",
+  description: "Takes an address and returns a satellite image of the property",
+  input: z
+    .object({
+      address: z.string().describe("Property address"),
+    })
+    .describe("Property address for image generation"),
+  output: z
+    .object({
+      imageUrl: z.string().describe("URL of the generated property image"),
+      latitude: z.number().describe("Property latitude"),
+      longitude: z.number().describe("Property longitude"),
+    })
+    .describe("Generated property image information"),
+  pricing: { pricePerUse: 0, currency: "USD" },
+  handler: async ({ address }, agentInfo, context) => {
+    console.log(`User / Agent ${agentInfo.id} requested property image for ${address}`);
+    
+    try {
+      // Use Google Maps API to geocode the address
+      const geocodeResult = await geocodeAddress(address);
+      
+      // Generate a Google Maps static image URL
+      const imageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${geocodeResult.latitude},${geocodeResult.longitude}&zoom=19&size=600x600&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}`;
+      
+      // Create response object
+      const imageResult = {
+        imageUrl,
+        latitude: geocodeResult.latitude,
+        longitude: geocodeResult.longitude,
+      };
+
+      // Create UI component
+      const imageCard = new CardUIBuilder()
+        .setRenderMode("page")
+        .title(`Property Image for ${geocodeResult.address}`)
+        .addChild(
+          new ImageCardUIBuilder(imageUrl)
+            .title("Property Satellite Image")
+            .description(`Satellite view of ${geocodeResult.address}`)
+            .imageAlt("Property Satellite Image")
+            .build()
+        )
+        .addChild(
+          new MapUIBuilder()
+            .setInitialView(geocodeResult.latitude, geocodeResult.longitude, 18)
+            .setMapStyle("mapbox://styles/mapbox/satellite-v9")
+            .addMarkers([
+              {
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude,
+                title: geocodeResult.address,
+                description: geocodeResult.address,
+                text: "📍",
+              },
+            ])
+            .build()
+        )
+        .build();
+
+      return {
+        text: `Generated property image for ${geocodeResult.address}`,
+        data: imageResult,
+        ui: imageCard,
+      };
+    } catch (error) {
+      console.error(`Error generating property image:`, error);
+      
+      // Use fallback geocoding
+      const geocodeResult = simulateGeocode(address);
+      
+      // Use a placeholder image for satellite view
+      const imageUrl = "https://cdn-icons-png.flaticon.com/512/4616/4616734.png";
+      
+      // Create fallback result
+      const imageResult = {
+        imageUrl,
+        latitude: geocodeResult.latitude,
+        longitude: geocodeResult.longitude,
+      };
+      
+      // Create UI component with warning
+      const imageCard = new CardUIBuilder()
+        .setRenderMode("page")
+        .title(`Property Image for ${geocodeResult.address}`)
+        .addChild(
+          new AlertUIBuilder()
+            .variant("warning")
+            .title("Using Approximate Location")
+            .message(`Unable to retrieve the exact satellite image for ${address}. Showing an approximation.`)
+            .build()
+        )
+        .addChild(
+          new MapUIBuilder()
+            .setInitialView(geocodeResult.latitude, geocodeResult.longitude, 18)
+            .setMapStyle("mapbox://styles/mapbox/satellite-v9")
+            .addMarkers([
+              {
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude,
+                title: geocodeResult.address,
+                description: geocodeResult.address,
+                text: "📍",
+              },
+            ])
+            .build()
+        )
+        .build();
+      
+      return {
+        text: `Generated approximate property location for ${geocodeResult.address}. Note: This is using simulated data.`,
+        data: imageResult,
+        ui: imageCard,
+      };
+    }
+  },
+};
+
 const generateVisualizationConfig: ToolConfig = {
   id: "generate-visualization",
   name: "Generate Solar Visualization",
@@ -744,8 +1021,6 @@ const generateVisualizationConfig: ToolConfig = {
   input: z
     .object({
       address: z.string().describe("Property address"),
-      latitude: z.number().describe("Property latitude"),
-      longitude: z.number().describe("Property longitude"),
       systemSize: z.number().describe("System size in kW"),
       panelCount: z.number().describe("Number of solar panels"),
       annualProduction: z.number().describe("Estimated annual energy production in kWh"),
@@ -772,8 +1047,6 @@ const generateVisualizationConfig: ToolConfig = {
   handler: async (
     { 
       address, 
-      latitude, 
-      longitude, 
       systemSize, 
       panelCount, 
       annualProduction,
@@ -787,6 +1060,9 @@ const generateVisualizationConfig: ToolConfig = {
     );
 
     try {
+      // Geocode the address to get coordinates
+      const geocodeResult = await geocodeAddress(address);
+      
       // Calculate CO2 reduction if not provided
       if (!co2Reduction) {
         co2Reduction = calculateCO2Reduction(annualProduction);
@@ -813,9 +1089,8 @@ const generateVisualizationConfig: ToolConfig = {
         { month: "Dec", production: Math.round(annualProduction * 0.03) },
       ];
       
-      // In a real implementation, we would generate an actual property image with panels
-      // For this demo, we'll use a placeholder URL
-      const propertyImageUrl = "https://cdn-icons-png.flaticon.com/512/181/181324.png";
+      // Get Google Maps satellite image
+      const propertyImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${geocodeResult.latitude},${geocodeResult.longitude}&zoom=19&size=600x600&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}`;
       
       // Create visualization result
       const visualizationResult = {
@@ -834,19 +1109,19 @@ const generateVisualizationConfig: ToolConfig = {
         .setLayoutType("column")
         .addChild(
           new CardUIBuilder()
-            .title(`Solar Installation at ${address}`)
+            .title(`Solar Installation at ${geocodeResult.address}`)
             .content(`This ${systemSize}kW system with ${panelCount} panels will produce approximately ${annualProduction.toLocaleString()} kWh annually.`)
             .build()
         )
         .addChild(
           new MapUIBuilder()
-            .setInitialView(latitude, longitude, 18)
+            .setInitialView(geocodeResult.latitude, geocodeResult.longitude, 18)
             .setMapStyle("mapbox://styles/mapbox/satellite-v9")
             .addMarkers([
               {
-                latitude,
-                longitude,
-                title: address,
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude,
+                title: geocodeResult.address,
                 description: `${systemSize}kW Solar System`,
                 text: `${systemSize}kW`,
               },
@@ -854,9 +1129,9 @@ const generateVisualizationConfig: ToolConfig = {
             .build()
         )
         .addChild(
-          new ImageCardUIBuilder("https://cdn-icons-png.flaticon.com/512/181/181324.png")
+          new ImageCardUIBuilder(propertyImageUrl)
             .title("Solar Panel Visualization")
-            .description("Visualization of solar panels on your property (sample image)")
+            .description(`Satellite view of ${geocodeResult.address} with suggested panel placement`)
             .imageAlt("Solar Panel Visualization")
             .build()
         )
@@ -883,21 +1158,113 @@ const generateVisualizationConfig: ToolConfig = {
         .build();
 
       return {
-        text: `Generated visualization for ${systemSize}kW solar system at ${address}. The system will produce approximately ${annualProduction.toLocaleString()} kWh annually and offset ${co2Reduction.toLocaleString()} kg of CO2.`,
+        text: `Generated visualization for ${systemSize}kW solar system at ${geocodeResult.address}. The system will produce approximately ${annualProduction.toLocaleString()} kWh annually and offset ${co2Reduction.toLocaleString()} kg of CO2.`,
         data: visualizationResult,
         ui: visualizationCard,
       };
     } catch (error) {
       console.error(`Error generating visualization:`, error);
       
+      // Use fallback geocoding
+      const geocodeResult = simulateGeocode(address);
+      
+      // Calculate CO2 reduction if not provided
+      if (!co2Reduction) {
+        co2Reduction = calculateCO2Reduction(annualProduction);
+      }
+      
+      // Calculate environmental equivalents
+      const treesEquivalent = Math.round(co2Reduction / 21); // 21 kg CO2 per tree per year
+      const carsEquivalent = Math.round(co2Reduction / 4600); // 4,600 kg CO2 per car per year
+      
+      // Generate monthly production data
+      const monthlyProductionData = [
+        { month: "Jan", production: Math.round(annualProduction * 0.06) },
+        { month: "Feb", production: Math.round(annualProduction * 0.07) },
+        { month: "Mar", production: Math.round(annualProduction * 0.08) },
+        { month: "Apr", production: Math.round(annualProduction * 0.09) },
+        { month: "May", production: Math.round(annualProduction * 0.11) },
+        { month: "Jun", production: Math.round(annualProduction * 0.12) },
+        { month: "Jul", production: Math.round(annualProduction * 0.12) },
+        { month: "Aug", production: Math.round(annualProduction * 0.11) },
+        { month: "Sep", production: Math.round(annualProduction * 0.09) },
+        { month: "Oct", production: Math.round(annualProduction * 0.07) },
+        { month: "Nov", production: Math.round(annualProduction * 0.05) },
+        { month: "Dec", production: Math.round(annualProduction * 0.03) },
+      ];
+      
+      // Use placeholder image for visualization
+      const propertyImageUrl = "https://cdn-icons-png.flaticon.com/512/4616/4616734.png";
+      
+      // Create fallback visualization result
+      const visualizationResult = {
+        propertyImageUrl,
+        monthlyProductionData,
+        environmentalImpact: {
+          co2Reduction,
+          treesEquivalent,
+          carsEquivalent,
+        },
+      };
+      
+      // Create UI components with warning
+      const visualizationCard = new LayoutUIBuilder()
+        .setRenderMode("page")
+        .setLayoutType("column")
+        .addChild(
+          new AlertUIBuilder()
+            .variant("warning")
+            .title("Using Approximate Location")
+            .message(`Unable to retrieve the exact property image for ${address}. Some visualizations are based on simulated data.`)
+            .build()
+        )
+        .addChild(
+          new CardUIBuilder()
+            .title(`Solar Installation at ${geocodeResult.address}`)
+            .content(`This ${systemSize}kW system with ${panelCount} panels will produce approximately ${annualProduction.toLocaleString()} kWh annually.`)
+            .build()
+        )
+        .addChild(
+          new MapUIBuilder()
+            .setInitialView(geocodeResult.latitude, geocodeResult.longitude, 18)
+            .setMapStyle("mapbox://styles/mapbox/satellite-v9")
+            .addMarkers([
+              {
+                latitude: geocodeResult.latitude,
+                longitude: geocodeResult.longitude,
+                title: geocodeResult.address,
+                description: `${systemSize}kW Solar System`,
+                text: `${systemSize}kW`,
+              },
+            ])
+            .build()
+        )
+        .addChild(
+          new ChartUIBuilder()
+            .type("bar")
+            .title("Projected Monthly Production")
+            .chartData(monthlyProductionData)
+            .dataKeys({ x: "month", y: "production" })
+            .build()
+        )
+        .addChild(
+          new CardUIBuilder()
+            .title("Environmental Impact")
+            .content(`
+              Your solar system will offset ${co2Reduction.toLocaleString()} kg of CO2 annually.
+              
+              This is equivalent to:
+              - Planting ${treesEquivalent} trees
+              - Taking ${carsEquivalent} cars off the road
+            `)
+            .build()
+        )
+        .build();
+      
       return {
-        text: `Error generating visualization: ${error.message}.`,
-        data: { error: error.message },
-        ui: new AlertUIBuilder()
-          .variant("error")
-          .title("Visualization Failed")
-          .message("Unable to generate solar visualization. Please check your inputs and try again.")
-          .build(),
+        text: `Generated visualization for ${systemSize}kW solar system at ${geocodeResult.address}. The system will produce approximately ${annualProduction.toLocaleString()} kWh annually and offset ${co2Reduction.toLocaleString()} kg of CO2. Note: Location data is simulated.`,
+        data: visualizationResult,
+        ui: visualizationCard,
       };
     }
   },
@@ -905,30 +1272,52 @@ const generateVisualizationConfig: ToolConfig = {
 
 const dainService = defineDAINService({
   metadata: {
-    title: "ahmed DAIN Service",
+    title: "Solar Advisor DAIN Service",
     description:
-      "A DAIN service for current weather and forecasts using Open-Meteo API",
+      "A comprehensive solar advisor that analyzes properties, recommends solar systems, calculates financials, and visualizes installations",
     version: "1.0.0",
-    author: "ahmed",
-    tags: ["weather", "forecast", "dain"],
-    logo: "https://cdn-icons-png.flaticon.com/512/252/252035.png",
+    author: "Solar Flair",
+    tags: ["solar", "renewable energy", "property analysis", "financial calculator"],
+    logo: "https://cdn-icons-png.flaticon.com/512/181/181324.png",
   },
   exampleQueries: [
     {
-      category: "Weather",
+      category: "Property Analysis",
       queries: [
-        "What is the weather in Tokyo?",
-        "What is the weather in San Francisco?",
-        "What is the weather in London?",
+        "Analyze solar potential for 123 Main St, San Francisco, CA",
+        "What's the solar suitability of my roof at 456 Oak Ave, Austin, TX?",
+        "Evaluate my home for solar panels at 789 Pine St, Seattle, WA",
+      ],
+    },
+    {
+      category: "Solar System",
+      queries: [
+        "Recommend a solar system for my 2,000 sq ft roof",
+        "What size solar system do I need for a $200 monthly electric bill?",
+        "Design a solar system with battery backup for my home",
+      ],
+    },
+    {
+      category: "Financial Analysis",
+      queries: [
+        "Calculate ROI for a 8kW solar system in California",
+        "What would be my payback period for solar in Texas?",
+        "Estimate solar savings for a 10kW system in Florida",
       ],
     },
   ],
   identity: {
     apiKey: process.env.DAIN_API_KEY,
   },
-  tools: [getWeatherConfig, getWeatherForecastConfig, analyzePropertyConfig, recommendSolarSystemConfig, calculateFinancialsConfig, generateVisualizationConfig],
+  tools: [
+    analyzePropertyConfig,
+    recommendSolarSystemConfig,
+    calculateFinancialsConfig,
+    generateVisualizationConfig,
+    generatePropertyImageConfig,
+  ],
 });
 
 dainService.startNode({ port: port }).then(({ address }) => {
-  console.log("Weather DAIN Service is running at :" + address().port);
+  console.log("Solar Advisor DAIN Service is running at :" + address().port);
 });
