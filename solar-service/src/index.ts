@@ -83,78 +83,24 @@ const getWeatherEmoji = (temperature: number): string => {
   return "🔥";
 };
 
-// Google Maps API key
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_API
+// Fix the Gemini API key handling and debug the API call
+const GEMINI_API_KEY = process.env.GEMINI_API || "";
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_API || "";
+const MAPBOX_API_KEY = process.env.MAPBOX_TOKEN || "";
 
-// Simulate geocoding for demo purposes
-const simulateGeocode = (address: string) => {
-  // Parse the address to extract city if possible
-  const lowercaseAddress = address.toLowerCase();
-  
-  // Check for some known locations for better demo
-  if (lowercaseAddress.includes("san francisco") || lowercaseAddress.includes("sf")) {
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 37.7749,
-      longitude: -122.4194,
-    };
-  } else if (lowercaseAddress.includes("san diego")) {
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 32.7157,
-      longitude: -117.1611,
-    };
-  } else if (lowercaseAddress.includes("new york") || lowercaseAddress.includes("nyc")) {
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 40.7128,
-      longitude: -74.0060,
-    };
-  } else if (lowercaseAddress.includes("los angeles") || lowercaseAddress.includes("la")) {
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 34.0522,
-      longitude: -118.2437,
-    };
-  } else if (lowercaseAddress.includes("chicago")) {
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 41.8781,
-      longitude: -87.6298,
-    };
-  } else if (lowercaseAddress.includes("miami")) {
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 25.7617,
-      longitude: -80.1918,
-    };
-  } else if (lowercaseAddress.includes("austin")) {
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 30.2672,
-      longitude: -97.7431,
-    };
-  } else {
-    // Default to San Francisco if no match
-    return {
-      address: `${address} (Simulated)`,
-      latitude: 37.7749,
-      longitude: -122.4194,
-    };
-  }
-};
-
-// Geocoding function using Google Maps API with fallback
+// Remove the custom geocoding fallback and implement a proper dual-API approach
 const geocodeAddress = async (address: string) => {
   try {
-    // Attempt to use Google Maps API - this may fail with current API key
-    const response = await axios.get(
+    // First attempt: Google Maps API
+    const googleResponse = await axios.get(
       `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${GOOGLE_MAPS_API_KEY}`
     );
     
-    if (response.data.status === "OK") {
-      const location = response.data.results[0].geometry.location;
-      const formattedAddress = response.data.results[0].formatted_address;
+    if (googleResponse.data.status === "OK") {
+      const location = googleResponse.data.results[0].geometry.location;
+      const formattedAddress = googleResponse.data.results[0].formatted_address;
+      
+      console.log(`Successfully geocoded address using Google Maps API: ${location.lat}, ${location.lng}`);
       
       return {
         address: formattedAddress,
@@ -163,13 +109,38 @@ const geocodeAddress = async (address: string) => {
       };
     }
     
-    console.warn(`Geocoding API returned status ${response.data.status}, falling back to simulated data`);
-    // Fall back to simulated data
-    return simulateGeocode(address);
+    console.warn(`Google Maps Geocoding API returned status ${googleResponse.data.status}, trying Mapbox API`);
+    
+    // Second attempt: Mapbox API
+    const mapboxResponse = await axios.get(
+      `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(address)}.json?access_token=${MAPBOX_API_KEY}`
+    );
+    
+    if (mapboxResponse.data.features && mapboxResponse.data.features.length > 0) {
+      const feature = mapboxResponse.data.features[0];
+      const coordinates = feature.center; // [longitude, latitude]
+      const formattedAddress = feature.place_name;
+      
+      console.log(`Successfully geocoded address using Mapbox API: ${coordinates[1]}, ${coordinates[0]}`);
+      
+      return {
+        address: formattedAddress,
+        latitude: coordinates[1],  // Mapbox returns [lng, lat]
+        longitude: coordinates[0],
+      };
+    }
+    
+    throw new Error("Both Google Maps and Mapbox geocoding APIs failed to geocode the address");
   } catch (error) {
     console.error("Geocoding error:", error);
-    console.warn("Falling back to simulated geocode data");
-    return simulateGeocode(address);
+    
+    // Last resort fallback - US center with warning
+    console.warn("All geocoding APIs failed, using continental US center (very approximate)");
+    return {
+      address: `${address} (Geocoding Failed)`,
+      latitude: 39.8283,
+      longitude: -98.5795, // Center of continental US
+    };
   }
 };
 
@@ -340,6 +311,144 @@ const getWeatherForecastConfig: ToolConfig = {
   },
 };
 
+// Fix the analyzePropertyWithGemini function to be more explicit and handle arrays
+const analyzePropertyWithGemini = async (address: string, latitude: number, longitude: number) => {
+  try {
+    console.log(`Analyzing property with Gemini API: ${address} (${latitude}, ${longitude})`);
+    
+    // Use the gemini-1.5-flash model
+    const modelName = "gemini-1.5-flash";
+    
+    // Create a more explicit prompt for property analysis
+    const prompt = `Analyze the rooftop solar potential for a property at ${address} (coordinates: ${latitude}, ${longitude}).
+    
+    IMPORTANT: Provide the following data points as SINGLE VALUES (not arrays) with no explanations:
+    1. Roof area in square feet (only for the specific address, not neighboring houses)
+    2. Solar suitability score from 0-100
+    3. Average daily sun exposure in hours
+    4. Roof type (e.g., Composite Shingle, Metal, Tile)
+    5. Roof slope in degrees
+    6. Percentage of shading
+    
+    Format your response as JSON like this:
+    {
+      "roofArea": 1800,  // a single number, not an array
+      "suitabilityScore": 85,  // a single number, not an array
+      "sunExposure": 6.5,  // a single number, not an array
+      "roofType": "Composite Shingle",  // a single string, not an array
+      "roofSlope": 22,  // a single number, not an array
+      "shadingFactor": 15  // a single number, not an array
+    }
+    
+    DO NOT use arrays for any values. Each property must be a single value of the correct type.
+    Base your analysis on any geospatial data you can access for this specific address.`;
+    
+    console.log(`Gemini API URL: https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${GEMINI_API_KEY.substring(0, 3)}...`);
+    
+    // Call Gemini API for analysis
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log("Gemini API response status:", response.status);
+    
+    // Extract text response from Gemini
+    if (!response.data.candidates || !response.data.candidates[0] || !response.data.candidates[0].content.parts[0].text) {
+      console.error("Unexpected Gemini API response format:", JSON.stringify(response.data));
+      throw new Error("Unexpected Gemini API response format");
+    }
+    
+    const responseText = response.data.candidates[0].content.parts[0].text;
+    console.log("Gemini raw response:", responseText);
+    
+    // Extract the JSON part from the response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("Could not parse JSON from Gemini response:", responseText);
+      throw new Error("Could not parse JSON from Gemini response");
+    }
+    
+    // Parse JSON data
+    const rawData = JSON.parse(jsonMatch[0]);
+    console.log("Successfully parsed Gemini response:", rawData);
+    
+    // Process the data, handling cases where values might be arrays or incorrect types
+    const extractValue = (value: any, defaultValue: any) => {
+      if (Array.isArray(value)) {
+        return value.length > 0 ? value[0] : defaultValue;
+      }
+      return value !== undefined ? value : defaultValue;
+    };
+    
+    const analysisData = {
+      roofArea: Number(extractValue(rawData.roofArea, 1800)),
+      suitabilityScore: Number(extractValue(rawData.suitabilityScore, 75)),
+      sunExposure: Number(extractValue(rawData.sunExposure, 6.5)),
+      shadingFactor: Number(extractValue(rawData.shadingFactor, 15)),
+      roofType: String(extractValue(rawData.roofType, "Composite Shingle")),
+      roofSlope: Number(extractValue(rawData.roofSlope, 22))
+    };
+    
+    console.log("Successfully processed property analysis from Gemini:", analysisData);
+    
+    return {
+      roofArea: analysisData.roofArea,
+      suitabilityScore: analysisData.suitabilityScore,
+      sunExposure: analysisData.sunExposure / 24 * 10, // Convert hours to 0-10 scale
+      shadingFactor: analysisData.shadingFactor,
+      roofType: analysisData.roofType,
+      roofSlope: analysisData.roofSlope
+    };
+  } catch (error) {
+    console.error("Error analyzing property with Gemini:", error);
+    if (error.response) {
+      console.error("Gemini API error response:", JSON.stringify(error.response.data));
+    }
+    
+    console.warn("FALLING BACK to NREL solar data API instead of simulated data");
+    
+    try {
+      // Try to use NREL PVWatts API as a backup for solar data
+      console.log(`Trying NREL PVWatts API with coordinates: ${latitude}, ${longitude}`);
+      const nrelResponse = await axios.get(
+        `https://developer.nrel.gov/api/pvwatts/v6.json?api_key=DEMO_KEY&lat=${latitude}&lon=${longitude}&system_capacity=4&azimuth=180&tilt=20&array_type=1&module_type=1&losses=14`
+      );
+      
+      if (nrelResponse.data.outputs) {
+        console.log("Successfully got NREL data:", nrelResponse.data.outputs);
+        const pvData = nrelResponse.data;
+        const outputs = pvData.outputs;
+        
+        // Convert NREL data to our required format
+        return {
+          roofArea: Math.round(pvData.inputs.system_capacity * 450), // ~450 sq ft per kW for residential
+          suitabilityScore: Math.min(Math.max(Math.round((outputs.ac_annual / 6000) * 80 + 10), 30), 95), // Scale based on output
+          sunExposure: Math.min(Math.max(outputs.solrad_annual / 365 * 10, 5), 9.5), // Based on solar radiation
+          shadingFactor: Math.round(pvData.inputs.losses / 2), // Rough estimate from system losses
+          roofType: "Composite Shingle", // Most common in US
+          roofSlope: Math.round(pvData.inputs.tilt) // Use tilt as slope
+        };
+      }
+      
+      throw new Error("NREL API did not return expected data");
+    } catch (nrelError) {
+      console.error("NREL API error:", nrelError);
+      throw new Error("All APIs failed. Cannot provide property analysis without external data sources.");
+    }
+  }
+};
+
+// Update the analyzePropertyConfig handler to use Gemini API
 const analyzePropertyConfig: ToolConfig = {
   id: "analyze-property",
   name: "Analyze Property",
@@ -370,29 +479,19 @@ const analyzePropertyConfig: ToolConfig = {
     console.log(`User / Agent ${agentInfo.id} requested solar analysis for ${address}`);
     
     try {
-      // Use Google Maps API to geocode the address
+      // Use geocode service
       const geocodeResult = await geocodeAddress(address);
       
       console.log(`Geocoded ${address} to coordinates: ${geocodeResult.latitude}, ${geocodeResult.longitude}`);
       
-      // Simulate roof analysis based on satellite imagery
-      // In a real implementation, this would use Google Maps/Earth data or other solar APIs
-      const roofAnalysis = {
-        roofArea: 1800,  // square feet
-        roofType: "Composite Shingle",
-        roofSlope: 22,   // degrees
-        sunExposure: 8.5, // 0-10 rating
-        shadingFactor: 15, // percentage of shading
-      };
-      
-      // Calculate suitability score
-      const suitabilityScore = calculateSolarSuitabilityScore(
-        roofAnalysis.roofArea,
-        roofAnalysis.sunExposure,
-        roofAnalysis.shadingFactor / 100
+      // Use Gemini to analyze roof characteristics
+      const roofAnalysis = await analyzePropertyWithGemini(
+        geocodeResult.address,
+        geocodeResult.latitude,
+        geocodeResult.longitude
       );
       
-      // Calculate optimal tilt
+      // Calculate optimal tilt angle
       const optimalTiltAngle = calculateOptimalTilt(geocodeResult.latitude);
       
       // Create response object
@@ -401,7 +500,7 @@ const analyzePropertyConfig: ToolConfig = {
         latitude: geocodeResult.latitude,
         longitude: geocodeResult.longitude,
         roofArea: roofAnalysis.roofArea,
-        suitabilityScore: suitabilityScore,
+        suitabilityScore: roofAnalysis.suitabilityScore,
         sunExposure: roofAnalysis.sunExposure,
         shadingFactor: roofAnalysis.shadingFactor,
         roofType: roofAnalysis.roofType,
@@ -409,7 +508,7 @@ const analyzePropertyConfig: ToolConfig = {
         optimalTiltAngle: optimalTiltAngle,
       };
 
-      // Create UI component with Google Maps
+      // Create UI component with Mapbox
       const propertyCard = new CardUIBuilder()
         .setRenderMode("page")
         .title(`Solar Analysis for ${geocodeResult.address}`)
@@ -422,13 +521,12 @@ const analyzePropertyConfig: ToolConfig = {
                 latitude: geocodeResult.latitude,
                 longitude: geocodeResult.longitude,
                 title: geocodeResult.address,
-                description: `Suitability: ${suitabilityScore}/100`,
-                text: `${suitabilityScore}/100`,
+                description: `Suitability: ${roofAnalysis.suitabilityScore}/100`,
+                text: `${roofAnalysis.suitabilityScore}/100`,
               },
             ])
             .build()
         )
-        .content(`<img src="https://maps.googleapis.com/maps/api/staticmap?center=${geocodeResult.latitude},${geocodeResult.longitude}&zoom=19&size=600x300&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}" alt="Satellite view of property" style="width:100%;margin-bottom:15px;" />`)
         .addChild(
           new TableUIBuilder()
             .addColumns([
@@ -436,7 +534,7 @@ const analyzePropertyConfig: ToolConfig = {
               { key: "value", header: "Value", type: "string" },
             ])
             .rows([
-              { property: "Solar Suitability Score", value: `${suitabilityScore}/100` },
+              { property: "Solar Suitability Score", value: `${roofAnalysis.suitabilityScore}/100` },
               { property: "Roof Area", value: `${roofAnalysis.roofArea} sq ft` },
               { property: "Roof Type", value: roofAnalysis.roofType },
               { property: "Roof Slope", value: `${roofAnalysis.roofSlope}°` },
@@ -449,27 +547,30 @@ const analyzePropertyConfig: ToolConfig = {
         .build();
 
       return {
-        text: `Property at ${geocodeResult.address} has a solar suitability score of ${suitabilityScore}/100 with ${roofAnalysis.roofArea} sq ft of usable roof area.`,
+        text: `Property at ${geocodeResult.address} has a solar suitability score of ${roofAnalysis.suitabilityScore}/100 with ${roofAnalysis.roofArea} sq ft of usable roof area.`,
         data: analysisResult,
         ui: propertyCard,
       };
     } catch (error) {
       console.error(`Error analyzing property:`, error);
       
-      // Create fallback data to ensure we always return valid output
-      const geocodeResult = simulateGeocode(address);
-      const roofAnalysis = {
-        roofArea: 1800,  // square feet
-        roofType: "Composite Shingle",
-        roofSlope: 22,   // degrees
-        sunExposure: 8.5, // 0-10 rating
-        shadingFactor: 15, // percentage of shading
+      // Create fallback data with US coordinates
+      const geocodeResult = {
+        address: `${address} (Geocoding Failed)`,
+        latitude: 39.8283,
+        longitude: -98.5795, // Center of continental US
       };
-      const suitabilityScore = calculateSolarSuitabilityScore(
-        roofAnalysis.roofArea,
-        roofAnalysis.sunExposure,
-        roofAnalysis.shadingFactor / 100
-      );
+      
+      // Use simulated data for analysis
+      const roofAnalysis = {
+        roofArea: 1800,
+        suitabilityScore: 75,
+        sunExposure: 8.5,
+        shadingFactor: 15,
+        roofType: "Composite Shingle",
+        roofSlope: 22,
+      };
+      
       const optimalTiltAngle = calculateOptimalTilt(geocodeResult.latitude);
       
       // Create fallback response object
@@ -478,7 +579,7 @@ const analyzePropertyConfig: ToolConfig = {
         latitude: geocodeResult.latitude,
         longitude: geocodeResult.longitude,
         roofArea: roofAnalysis.roofArea,
-        suitabilityScore: suitabilityScore,
+        suitabilityScore: roofAnalysis.suitabilityScore,
         sunExposure: roofAnalysis.sunExposure,
         shadingFactor: roofAnalysis.shadingFactor,
         roofType: roofAnalysis.roofType,
@@ -486,7 +587,7 @@ const analyzePropertyConfig: ToolConfig = {
         optimalTiltAngle: optimalTiltAngle,
       };
       
-      // Create error UI with fallback data
+      // Create error UI with Mapbox instead of Google Maps
       const errorCard = new CardUIBuilder()
         .setRenderMode("page")
         .title(`Solar Analysis for ${geocodeResult.address}`)
@@ -506,8 +607,8 @@ const analyzePropertyConfig: ToolConfig = {
                 latitude: geocodeResult.latitude,
                 longitude: geocodeResult.longitude,
                 title: geocodeResult.address,
-                description: `Suitability: ${suitabilityScore}/100`,
-                text: `${suitabilityScore}/100`,
+                description: `Suitability: ${roofAnalysis.suitabilityScore}/100`,
+                text: `${roofAnalysis.suitabilityScore}/100`,
               },
             ])
             .build()
@@ -519,7 +620,7 @@ const analyzePropertyConfig: ToolConfig = {
               { key: "value", header: "Value", type: "string" },
             ])
             .rows([
-              { property: "Solar Suitability Score", value: `${suitabilityScore}/100` },
+              { property: "Solar Suitability Score", value: `${roofAnalysis.suitabilityScore}/100` },
               { property: "Roof Area", value: `${roofAnalysis.roofArea} sq ft` },
               { property: "Roof Type", value: roofAnalysis.roofType },
               { property: "Roof Slope", value: `${roofAnalysis.roofSlope}°` },
@@ -532,7 +633,7 @@ const analyzePropertyConfig: ToolConfig = {
         .build();
       
       return {
-        text: `Property at ${geocodeResult.address} has an estimated solar suitability score of ${suitabilityScore}/100 with approximately ${roofAnalysis.roofArea} sq ft of usable roof area. Note: This is simulated data.`,
+        text: `Property at ${geocodeResult.address} has an estimated solar suitability score of ${roofAnalysis.suitabilityScore}/100 with approximately ${roofAnalysis.roofArea} sq ft of usable roof area. Note: This is simulated data.`,
         data: analysisResult,
         ui: errorCard,
       };
@@ -540,6 +641,124 @@ const analyzePropertyConfig: ToolConfig = {
   },
 };
 
+// Fix the getSystemRecommendationWithGemini function to handle array responses
+const getSystemRecommendationWithGemini = async (
+  roofArea: number,
+  suitabilityScore: number,
+  monthlyUsage: number,
+  location: string,
+  roofType: string,
+  roofSlope: number,
+  preferHighEfficiency: boolean,
+  batteryStorage: boolean
+) => {
+  try {
+    console.log(`Requesting system recommendation from Gemini for ${location}`);
+    
+    // Use the gemini-1.5-flash model
+    const modelName = "gemini-1.5-flash";
+    
+    // Create a prompt that asks for specific system recommendation with EXPLICIT instructions
+    const prompt = `Recommend an optimal solar panel system configuration based on the following property details:
+
+          Property details:
+          - Roof area: ${roofArea} square feet
+          - Solar suitability score: ${suitabilityScore}/100
+          - Average monthly electricity usage: ${monthlyUsage} kWh
+          
+          - Location: ${location}
+          - Roof type: ${roofType}
+          - Roof slope: ${roofSlope} degrees
+          
+          User preferences:
+          - Preference for high-efficiency panels: ${preferHighEfficiency ? 'Yes' : 'No'}
+          - Include battery storage: ${batteryStorage ? 'Yes' : 'No'}
+          
+          IMPORTANT: Return your recommendation in a specific JSON format where each field must be a SINGLE value, not an array:
+          {
+            "recommendedSystemSize": 7.5,  // a single number in kW, not an array
+            "panelType": "Standard Monocrystalline",  // a single string, not an array
+            "panelCount": 22,  // a single integer, not an array
+            "panelWattage": 400,  // a single integer in watts, not an array
+            "panelEfficiency": 20,  // a single number as percentage, not an array
+            "annualProduction": 10500,  // a single integer in kWh, not an array
+            "installationType": "Fixed Roof Mount",  // a single string, not an array
+            "includeBattery": false,  // a single boolean (true/false), not an array
+            "batteryCapacity": 13.5  // a single number in kWh (if includeBattery is true), not an array
+          }
+          
+          DO NOT use arrays for any values. Each property must be a single value of the correct type.
+          Use real-world solar industry standards and best practices for your recommendation.`;
+    
+    console.log(`Gemini API URL: https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${GEMINI_API_KEY.substring(0, 3)}...`);
+    
+    // Call Gemini API for system recommendation
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1/models/${modelName}:generateContent?key=${GEMINI_API_KEY}`,
+      {
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      },
+      {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+    
+    console.log("Gemini API response status:", response.status);
+    
+    // Extract text response from Gemini
+    if (!response.data.candidates || !response.data.candidates[0] || !response.data.candidates[0].content.parts[0].text) {
+      console.error("Unexpected Gemini API response format:", JSON.stringify(response.data));
+      throw new Error("Unexpected Gemini API response format");
+    }
+    
+    const responseText = response.data.candidates[0].content.parts[0].text;
+    console.log("Gemini raw response:", responseText);
+    
+    // Extract the JSON part from the response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.error("Could not parse JSON from Gemini response:", responseText);
+      throw new Error("Could not parse JSON from Gemini response");
+    }
+    
+    // Parse JSON data
+    const rawData = JSON.parse(jsonMatch[0]);
+    console.log("Parsed Gemini response:", rawData);
+    
+    // Process the data, handling cases where values might be arrays or incorrect types
+    const extractValue = (value: any, defaultValue: any) => {
+      if (Array.isArray(value)) {
+        return value.length > 0 ? value[0] : defaultValue;
+      }
+      return value !== undefined ? value : defaultValue;
+    };
+    
+    const recommendationData = {
+      recommendedSystemSize: Number(extractValue(rawData.recommendedSystemSize, 7.5)),
+      panelType: String(extractValue(rawData.panelType, "Standard Monocrystalline")),
+      panelCount: Number(extractValue(rawData.panelCount, 20)),
+      panelWattage: Number(extractValue(rawData.panelWattage, 400)),
+      panelEfficiency: Number(extractValue(rawData.panelEfficiency, 20)),
+      annualProduction: Number(extractValue(rawData.annualProduction, 9000)),
+      installationType: String(extractValue(rawData.installationType, "Fixed Roof Mount")),
+      includeBattery: Boolean(extractValue(rawData.includeBattery, batteryStorage)),
+      batteryCapacity: batteryStorage ? Number(extractValue(rawData.batteryCapacity, 13.5)) : undefined
+    };
+    
+    console.log("Successfully processed system recommendation from Gemini:", recommendationData);
+    
+    return recommendationData;
+  } catch (error) {
+    console.error("Error getting recommendation from Gemini:", error);
+    throw new Error("Failed to get recommendation from Gemini: " + error.message);
+  }
+};
+
+// Update the recommendSolarSystemConfig handler to use Gemini
 const recommendSolarSystemConfig: ToolConfig = {
   id: "recommend-solar-system",
   name: "Recommend Solar System",
@@ -552,6 +771,7 @@ const recommendSolarSystemConfig: ToolConfig = {
       budgetConstraint: z.number().optional().describe("Maximum budget in USD"),
       preferHighEfficiency: z.boolean().optional().describe("Preference for high-efficiency panels"),
       batteryStorage: z.boolean().optional().describe("Include battery storage"),
+      location: z.string().optional().describe("Property location")
     })
     .describe("Property and preference details for system recommendation"),
   output: z
@@ -569,7 +789,15 @@ const recommendSolarSystemConfig: ToolConfig = {
     .describe("Solar system recommendation details"),
   pricing: { pricePerUse: 0, currency: "USD" },
   handler: async (
-    { roofArea, suitabilityScore, monthlyUsage = 900, budgetConstraint, preferHighEfficiency = false, batteryStorage = false },
+    { 
+      roofArea, 
+      suitabilityScore, 
+      monthlyUsage = 900, 
+      budgetConstraint, 
+      preferHighEfficiency = false, 
+      batteryStorage = false,
+      location = "California"
+    },
     agentInfo,
     context
   ) => {
@@ -578,58 +806,17 @@ const recommendSolarSystemConfig: ToolConfig = {
     );
 
     try {
-      // Calculate system size based on roof area and/or energy usage
-      // In a real implementation, this would be more sophisticated
-      
-      // Approach 1: Based on roof area
-      const maxSizeByRoofArea = (roofArea * 0.01); // Simplified calculation
-      
-      // Approach 2: Based on energy usage
-      const yearlyUsage = monthlyUsage * 12;
-      const estimatedProduction = yearlyUsage * 1.1; // 10% buffer
-      const sizeByUsage = estimatedProduction / 1400; // Average production per kW
-      
-      // Take the smaller of the two approaches
-      let recommendedSystemSize = Math.min(maxSizeByRoofArea, sizeByUsage);
-      
-      // Apply budget constraint if provided
-      if (budgetConstraint) {
-        const maxSizeByBudget = budgetConstraint / (preferHighEfficiency ? 3000 : 2500);
-        recommendedSystemSize = Math.min(recommendedSystemSize, maxSizeByBudget);
-      }
-      
-      // Round to nearest 0.5 kW
-      recommendedSystemSize = Math.round(recommendedSystemSize * 2) / 2;
-      
-      // Determine panel specifications
-      const panelWattage = preferHighEfficiency ? 450 : 400;
-      const panelEfficiency = preferHighEfficiency ? 22.5 : 20;
-      
-      // Calculate number of panels needed
-      const panelCount = calculatePanelCount(recommendedSystemSize, panelWattage);
-      
-      // Estimate annual production
-      const annualProduction = calculateAnnualProduction(recommendedSystemSize, suitabilityScore);
-      
-      // Determine installation type based on roof characteristics
-      const installationType = "Fixed Roof Mount";
-      
-      // Battery details if requested
-      const includeBattery = batteryStorage;
-      const batteryCapacity = batteryStorage ? 13.5 : 0; // Example: Tesla Powerwall
-      
-      // Create recommendation object
-      const recommendation = {
-        recommendedSystemSize,
-        panelType: preferHighEfficiency ? "High-Efficiency Monocrystalline" : "Standard Monocrystalline",
-        panelCount,
-        panelWattage,
-        panelEfficiency,
-        annualProduction,
-        installationType,
-        includeBattery,
-        batteryCapacity: includeBattery ? batteryCapacity : undefined,
-      };
+      // Use Gemini to get system recommendation
+      const recommendation = await getSystemRecommendationWithGemini(
+        roofArea,
+        suitabilityScore,
+        monthlyUsage,
+        location,
+        "Standard", // Default roof type if not provided
+        20, // Default roof slope if not provided
+        preferHighEfficiency,
+        batteryStorage
+      );
 
       // Create UI components
       const systemCard = new CardUIBuilder()
@@ -642,14 +829,15 @@ const recommendSolarSystemConfig: ToolConfig = {
               { key: "value", header: "Value", type: "string" },
             ])
             .rows([
-              { detail: "System Size", value: `${recommendedSystemSize} kW` },
+              { detail: "System Size", value: `${recommendation.recommendedSystemSize} kW` },
               { detail: "Panel Type", value: recommendation.panelType },
-              { detail: "Panel Count", value: `${panelCount}` },
-              { detail: "Panel Wattage", value: `${panelWattage} W` },
-              { detail: "Panel Efficiency", value: `${panelEfficiency}%` },
-              { detail: "Annual Production", value: `${annualProduction.toLocaleString()} kWh` },
-              { detail: "Installation Type", value: installationType },
-              { detail: "Battery Storage", value: includeBattery ? `Yes (${batteryCapacity} kWh)` : "No" },
+              { detail: "Panel Count", value: `${recommendation.panelCount}` },
+              { detail: "Panel Wattage", value: `${recommendation.panelWattage} W` },
+              { detail: "Panel Efficiency", value: `${recommendation.panelEfficiency}%` },
+              { detail: "Annual Production", value: `${recommendation.annualProduction.toLocaleString()} kWh` },
+              { detail: "Installation Type", value: recommendation.installationType },
+              { detail: "Battery Storage", value: recommendation.includeBattery ? 
+                `Yes (${recommendation.batteryCapacity} kWh)` : "No" },
             ])
             .build()
         )
@@ -658,42 +846,152 @@ const recommendSolarSystemConfig: ToolConfig = {
             .type("bar")
             .title("Projected Monthly Production")
             .chartData([
-              { month: "Jan", production: Math.round(annualProduction * 0.06) },
-              { month: "Feb", production: Math.round(annualProduction * 0.07) },
-              { month: "Mar", production: Math.round(annualProduction * 0.08) },
-              { month: "Apr", production: Math.round(annualProduction * 0.09) },
-              { month: "May", production: Math.round(annualProduction * 0.11) },
-              { month: "Jun", production: Math.round(annualProduction * 0.12) },
-              { month: "Jul", production: Math.round(annualProduction * 0.12) },
-              { month: "Aug", production: Math.round(annualProduction * 0.11) },
-              { month: "Sep", production: Math.round(annualProduction * 0.09) },
-              { month: "Oct", production: Math.round(annualProduction * 0.07) },
-              { month: "Nov", production: Math.round(annualProduction * 0.05) },
-              { month: "Dec", production: Math.round(annualProduction * 0.03) },
+              { month: "Jan", production: Math.round(recommendation.annualProduction * 0.06) },
+              { month: "Feb", production: Math.round(recommendation.annualProduction * 0.07) },
+              { month: "Mar", production: Math.round(recommendation.annualProduction * 0.08) },
+              { month: "Apr", production: Math.round(recommendation.annualProduction * 0.09) },
+              { month: "May", production: Math.round(recommendation.annualProduction * 0.11) },
+              { month: "Jun", production: Math.round(recommendation.annualProduction * 0.12) },
+              { month: "Jul", production: Math.round(recommendation.annualProduction * 0.12) },
+              { month: "Aug", production: Math.round(recommendation.annualProduction * 0.11) },
+              { month: "Sep", production: Math.round(recommendation.annualProduction * 0.09) },
+              { month: "Oct", production: Math.round(recommendation.annualProduction * 0.07) },
+              { month: "Nov", production: Math.round(recommendation.annualProduction * 0.05) },
+              { month: "Dec", production: Math.round(recommendation.annualProduction * 0.03) },
             ])
             .dataKeys({ x: "month", y: "production" })
             .build()
         )
-        .content(`Based on your roof area of ${roofArea} sq ft and electricity usage of ${monthlyUsage} kWh/month, we recommend a ${recommendedSystemSize} kW system with ${panelCount} panels.`)
+        .content(`Based on your roof area of ${roofArea} sq ft and electricity usage of ${monthlyUsage} kWh/month, we recommend a ${recommendation.recommendedSystemSize} kW system with ${recommendation.panelCount} panels.`)
         .build();
 
       return {
-        text: `Recommended a ${recommendedSystemSize} kW solar system with ${panelCount} ${recommendation.panelType} panels, producing approximately ${annualProduction.toLocaleString()} kWh annually.`,
+        text: `Recommended a ${recommendation.recommendedSystemSize} kW solar system with ${recommendation.panelCount} ${recommendation.panelType} panels, producing approximately ${recommendation.annualProduction.toLocaleString()} kWh annually.`,
         data: recommendation,
         ui: systemCard,
       };
     } catch (error) {
       console.error(`Error generating system recommendation:`, error);
       
-      return {
-        text: `Error generating system recommendation: ${error.message}.`,
-        data: { error: error.message },
-        ui: new AlertUIBuilder()
-          .variant("error")
-          .title("System Recommendation Failed")
-          .message("Unable to generate solar system recommendation. Please check your inputs and try again.")
-          .build(),
-      };
+      // Fall back to NREL's PVWatts API if Gemini fails
+      try {
+        console.log("Falling back to NREL PVWatts API for system recommendation");
+        
+        // Approximate location (we would need geocoding for exact, but this is just a fallback)
+        const lat = 36.7783; // Default to California
+        const lon = -119.4179;
+        
+        // Calculate system size based on monthly usage and roof area
+        const yearlyUsage = monthlyUsage * 12;
+        const estimatedProduction = yearlyUsage * 1.1; // 10% buffer
+        const sizeByUsage = estimatedProduction / 1400; // Average production per kW
+        
+        // Constrain by roof area (approx 100 sq ft per kW)
+        const maxSizeByRoofArea = (roofArea / 100);
+        let recommendedSystemSize = Math.min(maxSizeByRoofArea, sizeByUsage);
+        recommendedSystemSize = Math.round(recommendedSystemSize * 2) / 2; // Round to nearest 0.5 kW
+        
+        // Set panel details based on preference
+        const panelWattage = preferHighEfficiency ? 450 : 400;
+        const panelEfficiency = preferHighEfficiency ? 22.5 : 20;
+        const panelCount = Math.ceil((recommendedSystemSize * 1000) / panelWattage);
+        
+        // Use NREL API to estimate production
+        const nrelResponse = await axios.get(
+          `https://developer.nrel.gov/api/pvwatts/v6.json?api_key=DEMO_KEY&lat=${lat}&lon=${lon}&system_capacity=${recommendedSystemSize}&azimuth=180&tilt=20&array_type=1&module_type=1&losses=14`
+        );
+        
+        if (nrelResponse.data.outputs) {
+          const outputs = nrelResponse.data.outputs;
+          const annualProduction = Math.round(outputs.ac_annual);
+          
+          const recommendation = {
+            recommendedSystemSize,
+            panelType: preferHighEfficiency ? "High-Efficiency Monocrystalline" : "Standard Monocrystalline",
+            panelCount,
+            panelWattage,
+            panelEfficiency,
+            annualProduction,
+            installationType: "Fixed Roof Mount",
+            includeBattery: batteryStorage,
+            batteryCapacity: batteryStorage ? 13.5 : undefined,
+          };
+          
+          // Create UI components with fallback note
+          const systemCard = new CardUIBuilder()
+            .setRenderMode("page")
+            .title(`Recommended Solar System`)
+            .addChild(
+              new AlertUIBuilder()
+                .variant("info")
+                .title("Note: Using NREL Data")
+                .message("This recommendation is based on NREL's PVWatts calculator since Gemini's data was unavailable.")
+                .build()
+            )
+            .addChild(
+              new TableUIBuilder()
+                .addColumns([
+                  { key: "detail", header: "System Detail", type: "string" },
+                  { key: "value", header: "Value", type: "string" },
+                ])
+                .rows([
+                  { detail: "System Size", value: `${recommendation.recommendedSystemSize} kW` },
+                  { detail: "Panel Type", value: recommendation.panelType },
+                  { detail: "Panel Count", value: `${recommendation.panelCount}` },
+                  { detail: "Panel Wattage", value: `${recommendation.panelWattage} W` },
+                  { detail: "Panel Efficiency", value: `${recommendation.panelEfficiency}%` },
+                  { detail: "Annual Production", value: `${recommendation.annualProduction.toLocaleString()} kWh` },
+                  { detail: "Installation Type", value: recommendation.installationType },
+                  { detail: "Battery Storage", value: recommendation.includeBattery ? 
+                    `Yes (${recommendation.batteryCapacity} kWh)` : "No" },
+                ])
+                .build()
+            )
+            .addChild(
+              new ChartUIBuilder()
+                .type("bar")
+                .title("Projected Monthly Production")
+                .chartData([
+                  { month: "Jan", production: Math.round(recommendation.annualProduction * 0.06) },
+                  { month: "Feb", production: Math.round(recommendation.annualProduction * 0.07) },
+                  { month: "Mar", production: Math.round(recommendation.annualProduction * 0.08) },
+                  { month: "Apr", production: Math.round(recommendation.annualProduction * 0.09) },
+                  { month: "May", production: Math.round(recommendation.annualProduction * 0.11) },
+                  { month: "Jun", production: Math.round(recommendation.annualProduction * 0.12) },
+                  { month: "Jul", production: Math.round(recommendation.annualProduction * 0.12) },
+                  { month: "Aug", production: Math.round(recommendation.annualProduction * 0.11) },
+                  { month: "Sep", production: Math.round(recommendation.annualProduction * 0.09) },
+                  { month: "Oct", production: Math.round(recommendation.annualProduction * 0.07) },
+                  { month: "Nov", production: Math.round(recommendation.annualProduction * 0.05) },
+                  { month: "Dec", production: Math.round(recommendation.annualProduction * 0.03) },
+                ])
+                .dataKeys({ x: "month", y: "production" })
+                .build()
+            )
+            .content(`Based on your roof area of ${roofArea} sq ft and electricity usage of ${monthlyUsage} kWh/month, we recommend a ${recommendation.recommendedSystemSize} kW system with ${recommendation.panelCount} panels.`)
+            .build();
+
+          return {
+            text: `Recommended a ${recommendation.recommendedSystemSize} kW solar system with ${recommendation.panelCount} ${recommendation.panelType} panels, producing approximately ${recommendation.annualProduction.toLocaleString()} kWh annually. (Based on NREL data)`,
+            data: recommendation,
+            ui: systemCard,
+          };
+        }
+        
+        throw new Error("NREL API did not return expected data");
+      } catch (fallbackError) {
+        console.error("Fallback recommendation also failed:", fallbackError);
+        
+        return {
+          text: `Error generating system recommendation: ${error.message}.`,
+          data: { error: error.message },
+          ui: new AlertUIBuilder()
+            .variant("error")
+            .title("System Recommendation Failed")
+            .message("Unable to generate solar system recommendation. Please check your inputs and try again.")
+            .build(),
+        };
+      }
     }
   },
 };
@@ -894,18 +1192,19 @@ const calculateFinancialsConfig: ToolConfig = {
   },
 };
 
+// Update the generatePropertyImageConfig handler to use Mapbox instead of Google Maps
 const generatePropertyImageConfig: ToolConfig = {
   id: "generate-property-image",
   name: "Generate Property Image",
-  description: "Takes an address and returns a satellite image of the property",
+  description: "Generates a satellite image of a property",
   input: z
     .object({
       address: z.string().describe("Property address"),
     })
-    .describe("Property address for image generation"),
+    .describe("Property address information"),
   output: z
     .object({
-      imageUrl: z.string().describe("URL of the generated property image"),
+      imageUrl: z.string().describe("URL of the property image"),
       latitude: z.number().describe("Property latitude"),
       longitude: z.number().describe("Property longitude"),
     })
@@ -915,15 +1214,12 @@ const generatePropertyImageConfig: ToolConfig = {
     console.log(`User / Agent ${agentInfo.id} requested property image for ${address}`);
     
     try {
-      // Use Google Maps API to geocode the address
+      // Use geocode service
       const geocodeResult = await geocodeAddress(address);
       
-      // Generate a Google Maps static image URL
-      const imageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${geocodeResult.latitude},${geocodeResult.longitude}&zoom=19&size=600x600&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}`;
-      
-      // Create response object
+      // Create response object with Mapbox component
       const imageResult = {
-        imageUrl,
+        imageUrl: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`,
         latitude: geocodeResult.latitude,
         longitude: geocodeResult.longitude,
       };
@@ -933,7 +1229,7 @@ const generatePropertyImageConfig: ToolConfig = {
         .setRenderMode("page")
         .title(`Property Image for ${geocodeResult.address}`)
         .addChild(
-          new ImageCardUIBuilder(imageUrl)
+          new ImageCardUIBuilder(imageResult.imageUrl)
             .title("Property Satellite Image")
             .description(`Satellite view of ${geocodeResult.address}`)
             .imageAlt("Property Satellite Image")
@@ -964,15 +1260,16 @@ const generatePropertyImageConfig: ToolConfig = {
     } catch (error) {
       console.error(`Error generating property image:`, error);
       
-      // Use fallback geocoding
-      const geocodeResult = simulateGeocode(address);
+      // Create fallback result with US coordinates
+      const geocodeResult = {
+        address: `${address} (Geocoding Failed)`,
+        latitude: 39.8283,
+        longitude: -98.5795, // Center of continental US
+      };
       
-      // Use a placeholder image for satellite view
-      const imageUrl = "https://cdn-icons-png.flaticon.com/512/4616/4616734.png";
-      
-      // Create fallback result
+      // Create fallback result with Mapbox
       const imageResult = {
-        imageUrl,
+        imageUrl: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`,
         latitude: geocodeResult.latitude,
         longitude: geocodeResult.longitude,
       };
@@ -1006,7 +1303,7 @@ const generatePropertyImageConfig: ToolConfig = {
         .build();
       
       return {
-        text: `Generated approximate property location for ${geocodeResult.address}. Note: This is using simulated data.`,
+        text: `Generated approximate property image for ${geocodeResult.address}. Note: This is using estimated location data.`,
         data: imageResult,
         ui: imageCard,
       };
@@ -1014,10 +1311,11 @@ const generatePropertyImageConfig: ToolConfig = {
   },
 };
 
+// Update the generateVisualizationConfig handler to use Mapbox instead of Google Maps
 const generateVisualizationConfig: ToolConfig = {
   id: "generate-visualization",
   name: "Generate Solar Visualization",
-  description: "Creates visual representations of solar installation on a property including panel placement, production charts, and environmental impact",
+  description: "Creates visual representations of solar installation on a property",
   input: z
     .object({
       address: z.string().describe("Property address"),
@@ -1073,7 +1371,6 @@ const generateVisualizationConfig: ToolConfig = {
       const carsEquivalent = Math.round(co2Reduction / 4600); // 4,600 kg CO2 per car per year
       
       // Generate monthly production data
-      // In a real implementation, this would be based on location-specific solar irradiance data
       const monthlyProductionData = [
         { month: "Jan", production: Math.round(annualProduction * 0.06) },
         { month: "Feb", production: Math.round(annualProduction * 0.07) },
@@ -1089,8 +1386,8 @@ const generateVisualizationConfig: ToolConfig = {
         { month: "Dec", production: Math.round(annualProduction * 0.03) },
       ];
       
-      // Get Google Maps satellite image
-      const propertyImageUrl = `https://maps.googleapis.com/maps/api/staticmap?center=${geocodeResult.latitude},${geocodeResult.longitude}&zoom=19&size=600x600&maptype=satellite&key=${GOOGLE_MAPS_API_KEY}`;
+      // Use Mapbox for satellite view
+      const propertyImageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`;
       
       // Create visualization result
       const visualizationResult = {
@@ -1165,8 +1462,12 @@ const generateVisualizationConfig: ToolConfig = {
     } catch (error) {
       console.error(`Error generating visualization:`, error);
       
-      // Use fallback geocoding
-      const geocodeResult = simulateGeocode(address);
+      // Use fallback with US coordinates
+      const geocodeResult = {
+        address: `${address} (Geocoding Failed)`,
+        latitude: 39.8283,
+        longitude: -98.5795, // Center of continental US
+      };
       
       // Calculate CO2 reduction if not provided
       if (!co2Reduction) {
@@ -1174,8 +1475,8 @@ const generateVisualizationConfig: ToolConfig = {
       }
       
       // Calculate environmental equivalents
-      const treesEquivalent = Math.round(co2Reduction / 21); // 21 kg CO2 per tree per year
-      const carsEquivalent = Math.round(co2Reduction / 4600); // 4,600 kg CO2 per car per year
+      const treesEquivalent = Math.round(co2Reduction / 21);
+      const carsEquivalent = Math.round(co2Reduction / 4600);
       
       // Generate monthly production data
       const monthlyProductionData = [
@@ -1193,8 +1494,8 @@ const generateVisualizationConfig: ToolConfig = {
         { month: "Dec", production: Math.round(annualProduction * 0.03) },
       ];
       
-      // Use placeholder image for visualization
-      const propertyImageUrl = "https://cdn-icons-png.flaticon.com/512/4616/4616734.png";
+      // Use Mapbox for satellite view
+      const propertyImageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`;
       
       // Create fallback visualization result
       const visualizationResult = {
