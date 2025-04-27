@@ -1192,7 +1192,7 @@ const calculateFinancialsConfig: ToolConfig = {
   },
 };
 
-// Update the generatePropertyImageConfig handler to use Mapbox instead of Google Maps
+// Update the generatePropertyImageConfig handler to remove direct static images
 const generatePropertyImageConfig: ToolConfig = {
   id: "generate-property-image",
   name: "Generate Property Image",
@@ -1204,11 +1204,11 @@ const generatePropertyImageConfig: ToolConfig = {
     .describe("Property address information"),
   output: z
     .object({
-      imageUrl: z.string().describe("URL of the property image"),
       latitude: z.number().describe("Property latitude"),
       longitude: z.number().describe("Property longitude"),
+      address: z.string().describe("Formatted address")
     })
-    .describe("Generated property image information"),
+    .describe("Property location information"),
   pricing: { pricePerUse: 0, currency: "USD" },
   handler: async ({ address }, agentInfo, context) => {
     console.log(`User / Agent ${agentInfo.id} requested property image for ${address}`);
@@ -1217,24 +1217,17 @@ const generatePropertyImageConfig: ToolConfig = {
       // Use geocode service
       const geocodeResult = await geocodeAddress(address);
       
-      // Create response object with Mapbox component
+      // Create response object with location data
       const imageResult = {
-        imageUrl: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`,
+        address: geocodeResult.address,
         latitude: geocodeResult.latitude,
         longitude: geocodeResult.longitude,
       };
 
-      // Create UI component
+      // Create UI component with enhanced map (no direct static image)
       const imageCard = new CardUIBuilder()
         .setRenderMode("page")
-        .title(`Property Image for ${geocodeResult.address}`)
-        .addChild(
-          new ImageCardUIBuilder(imageResult.imageUrl)
-            .title("Property Satellite Image")
-            .description(`Satellite view of ${geocodeResult.address}`)
-            .imageAlt("Property Satellite Image")
-            .build()
-        )
+        .title(`Property Location: ${geocodeResult.address}`)
         .addChild(
           new MapUIBuilder()
             .setInitialView(geocodeResult.latitude, geocodeResult.longitude, 18)
@@ -1244,16 +1237,17 @@ const generatePropertyImageConfig: ToolConfig = {
                 latitude: geocodeResult.latitude,
                 longitude: geocodeResult.longitude,
                 title: geocodeResult.address,
-                description: geocodeResult.address,
+                description: `Location: ${geocodeResult.address}`,
                 text: "📍",
               },
             ])
             .build()
         )
+        .content(`Interactive satellite view of ${geocodeResult.address}. Use the map controls to zoom and pan.`)
         .build();
 
       return {
-        text: `Generated property image for ${geocodeResult.address}`,
+        text: `Generated property location view for ${geocodeResult.address}`,
         data: imageResult,
         ui: imageCard,
       };
@@ -1267,22 +1261,15 @@ const generatePropertyImageConfig: ToolConfig = {
         longitude: -98.5795, // Center of continental US
       };
       
-      // Create fallback result with Mapbox
-      const imageResult = {
-        imageUrl: `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`,
-        latitude: geocodeResult.latitude,
-        longitude: geocodeResult.longitude,
-      };
-      
-      // Create UI component with warning
+      // Create error UI with map only (no direct static image)
       const imageCard = new CardUIBuilder()
         .setRenderMode("page")
-        .title(`Property Image for ${geocodeResult.address}`)
+        .title(`Property Location (Approximate)`)
         .addChild(
           new AlertUIBuilder()
             .variant("warning")
             .title("Using Approximate Location")
-            .message(`Unable to retrieve the exact satellite image for ${address}. Showing an approximation.`)
+            .message(`Unable to retrieve the exact location for ${address}. Showing an approximation.`)
             .build()
         )
         .addChild(
@@ -1303,15 +1290,15 @@ const generatePropertyImageConfig: ToolConfig = {
         .build();
       
       return {
-        text: `Generated approximate property image for ${geocodeResult.address}. Note: This is using estimated location data.`,
-        data: imageResult,
+        text: `Generated approximate property location for ${geocodeResult.address}. Note: This is using estimated location data.`,
+        data: geocodeResult,
         ui: imageCard,
       };
     }
   },
 };
 
-// Update the generateVisualizationConfig handler to use Mapbox instead of Google Maps
+// Update the generateVisualizationConfig handler to remove direct static images
 const generateVisualizationConfig: ToolConfig = {
   id: "generate-visualization",
   name: "Generate Solar Visualization",
@@ -1327,7 +1314,7 @@ const generateVisualizationConfig: ToolConfig = {
     .describe("System and property details for visualization"),
   output: z
     .object({
-      propertyImageUrl: z.string().describe("URL of property visualization with panels"),
+      address: z.string().describe("Property address"),
       monthlyProductionData: z.array(
         z.object({
           month: z.string(),
@@ -1367,8 +1354,8 @@ const generateVisualizationConfig: ToolConfig = {
       }
       
       // Calculate environmental equivalents
-      const treesEquivalent = Math.round(co2Reduction / 21); // 21 kg CO2 per tree per year
-      const carsEquivalent = Math.round(co2Reduction / 4600); // 4,600 kg CO2 per car per year
+      const treesEquivalent = Math.round(co2Reduction / 21);
+      const carsEquivalent = Math.round(co2Reduction / 4600);
       
       // Generate monthly production data
       const monthlyProductionData = [
@@ -1386,12 +1373,9 @@ const generateVisualizationConfig: ToolConfig = {
         { month: "Dec", production: Math.round(annualProduction * 0.03) },
       ];
       
-      // Use Mapbox for satellite view
-      const propertyImageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`;
-      
       // Create visualization result
       const visualizationResult = {
-        propertyImageUrl,
+        address: geocodeResult.address,
         monthlyProductionData,
         environmentalImpact: {
           co2Reduction,
@@ -1423,13 +1407,6 @@ const generateVisualizationConfig: ToolConfig = {
                 text: `${systemSize}kW`,
               },
             ])
-            .build()
-        )
-        .addChild(
-          new ImageCardUIBuilder(propertyImageUrl)
-            .title("Solar Panel Visualization")
-            .description(`Satellite view of ${geocodeResult.address} with suggested panel placement`)
-            .imageAlt("Solar Panel Visualization")
             .build()
         )
         .addChild(
@@ -1494,12 +1471,9 @@ const generateVisualizationConfig: ToolConfig = {
         { month: "Dec", production: Math.round(annualProduction * 0.03) },
       ];
       
-      // Use Mapbox for satellite view
-      const propertyImageUrl = `https://api.mapbox.com/styles/v1/mapbox/satellite-v9/static/${geocodeResult.longitude},${geocodeResult.latitude},18,0/600x600?access_token=${process.env.MAPBOX_TOKEN || 'YOUR_MAPBOX_TOKEN'}`;
-      
       // Create fallback visualization result
       const visualizationResult = {
-        propertyImageUrl,
+        address: geocodeResult.address,
         monthlyProductionData,
         environmentalImpact: {
           co2Reduction,
