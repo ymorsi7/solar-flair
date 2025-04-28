@@ -28,6 +28,7 @@
         }
 
         body {
+            padding-top: 40px;
             background-color: #f8f9fa;
             color: var(--dark);
             overflow-x: hidden;
@@ -41,15 +42,28 @@
 
         /* MLH Winner Banner */
         .mlh-banner {
-            background: var(--dark);
-            color: var(--white);
+            background: #ffffff;
+            color: #1d539f;
             padding: 0.5rem 0;
             text-align: center;
-            font-weight: 600;
+            font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            z-index: 1000;
+            border-bottom: 2px solid #fb8500;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .mlh-banner:hover {
+            background: #f8f9fa;
         }
 
         .mlh-banner img {
@@ -479,6 +493,10 @@
         }
 
         @media (max-width: 480px) {
+            body {
+                padding-top: 35px;
+            }
+
             .hero h1 {
                 font-size: 1.8rem;
             }
@@ -501,10 +519,10 @@
 </head>
 <body>
     <!-- MLH Winner Banner -->
-    <div class="mlh-banner">
-        <img src="https://static.mlh.io/brand-assets/logo/official/mlh-logo-white.svg" alt="MLH Logo">
-        <span>LA Hacks 2025 Winner</span>
-    </div>
+    <a href="https://devpost.com/software/solar-flair-rkxz0f" class="mlh-banner" target="_blank">
+        <img src="https://static.mlh.io/brand-assets/logo/official/mlh-logo-color.svg" alt="MLH Logo">
+        <span>LA Hacks 2025 Award Winner</span>
+    </a>
 
     <header>
         <div class="container">
